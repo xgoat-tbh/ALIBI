@@ -1,0 +1,5 @@
+$server = Start-Process -NoNewWindow -PassThru powershell "-ExecutionPolicy Bypass -Command `"cd D:\ALIBI; node server\server.js`""
+$client = Start-Process -NoNewWindow -PassThru powershell "-ExecutionPolicy Bypass -Command `"cd D:\ALIBI; npx vite`""
+Write-Host "Server PID: $($server.Id)"
+Write-Host "Client PID: $($client.Id)"
+Write-Host "Both started. Access at http://localhost:5173"
