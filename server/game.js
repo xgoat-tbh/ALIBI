@@ -1,291 +1,14 @@
 import { generateCase, THEMES } from './caseGenerator.js';
+import {
+  rooms, getIO, generateRoomCode, stripHtml, findPlayerRoom,
+  checkRateLimit, broadcastRoomState, getFilteredRoomState
+} from './roomManager.js';
+import { clearTimer, advancePhase, transitionToPhase } from './phaseManager.js';
+import { calculateScoring } from './scoring.js';
 
-// ─── Types (JSDoc for clarity) ───
-
-/** @typedef {import('socket.io').Server & import('socket.io').Socket} */
-
-// ─── State ───
-
-export const rooms = new Map();
-let io = null;
-
-export function setIO(instance) {
-  io = instance;
-}
-
-function getIO() {
-  if (!io) throw new Error('Socket.io not initialized');
-  return io;
-}
-
-// ─── Utilities ───
-
-const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-
-function generateRoomCode() {
-  let code = '';
-  for (let i = 0; i < 6; i++) {
-    code += CHARS.charAt(Math.floor(Math.random() * CHARS.length));
-  }
-  if (rooms.has(code)) return generateRoomCode();
-  return code;
-}
-
-function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-function stripHtml(s) {
-  if (!s) return '';
-  return s.replace(/<[^>]*>/g, '').replace(/[&<>"]/g, '');
-}
-
-// ─── Rate Limiting ───
-
-const rateLimitMap = new Map();
-
-function checkRateLimit(key, maxAttempts, windowMs) {
-  const now = Date.now();
-  const entry = rateLimitMap.get(key);
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(key, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-  if (entry.count >= maxAttempts) return false;
-  entry.count++;
-  return true;
-}
-
-setInterval(() => {
-  const now = Date.now();
-  for (const [key, entry] of rateLimitMap) {
-    if (now > entry.resetAt) rateLimitMap.delete(key);
-  }
-}, 300000);
-
-// ─── Filtered State ───
-
-export function getFilteredRoomState(room, playerId) {
-  const isEnded = room.status === 'reveal' || room.status === 'recap';
-  const inGame = room.status !== 'lobby';
-  const isSpectator = room.spectators.includes(playerId);
-  const player = room.players.find(p => p.id === playerId);
-  const isEcho = false; // Not applicable for ALIBI
-
-  return {
-    code: room.code,
-    status: room.status,
-    phaseTimer: room.phaseTimer,
-    testimonySpeakerIdx: room.testimonySpeakerIdx,
-    objection: room.objection,
-    board: room.board,
-    reconstruction: room.reconstruction,
-    trustPoints: room.trustPoints,
-    highlights: room.highlights || [],
-    chats: room.chats.slice(-100),
-    players: room.players.map(p => {
-      const isSelf = p.id === playerId;
-      return {
-        id: p.id,
-        name: p.name,
-        score: p.score,
-        detectiveRating: p.detectiveRating,
-        isHost: p.isHost,
-        currentStake: (isSelf || isEnded) ? p.currentStake : null,
-        currentLock: (isSelf || isEnded) ? p.currentLock : null,
-        lastScoreDelta: p.lastScoreDelta,
-        isReady: p.isReady
-      };
-    }),
-    caseData: inGame ? {
-      themeTitle: room.caseData?.themeTitle,
-      themeDescription: room.caseData?.themeDescription,
-      groundTruth: (isEnded || isSpectator) ? room.caseData?.groundTruth : null
-    } : null,
-    lockedPlayerIds: Array.from(room.lockedPlayerIds),
-    spectators: room.spectators
-  };
-}
-
-export function broadcastRoomState(room) {
-  const i = getIO();
-  room.players.forEach(p => {
-    i.to(p.id).emit('room_updated', getFilteredRoomState(room, p.id));
-  });
-  room.spectators.forEach(sId => {
-    i.to(sId).emit('room_updated', getFilteredRoomState(room, sId));
-  });
-  // Also emit private hand data
-  room.players.forEach((p, idx) => {
-    if (room.caseData && room.caseData.playersFacts) {
-      const facts = room.caseData.playersFacts[`player-${idx}`];
-      if (facts) {
-        i.to(p.id).emit('private_hand', { hand: facts });
-      }
-    }
-  });
-}
-
-// ─── Timer ───
-
-function clearTimer(room) {
-  if (room.timerInterval) {
-    clearInterval(room.timerInterval);
-    room.timerInterval = null;
-  }
-}
-
-function startTimer(room, seconds, onEnd) {
-  clearTimer(room);
-  room.phaseTimer = seconds;
-  if (seconds <= 0) { onEnd(); return; }
-  room.timerInterval = setInterval(() => {
-    const r = rooms.get(room.code);
-    if (!r) { clearTimer(room); return; }
-    r.phaseTimer--;
-    broadcastRoomState(r);
-    if (r.phaseTimer <= 0) {
-      clearTimer(r);
-      onEnd();
-    }
-  }, 1000);
-}
-
-function findPlayerRoom(socketId) {
-  for (const room of rooms.values()) {
-    if (room.players.some(p => p.id === socketId) || room.spectators.includes(socketId)) return room;
-  }
-  return null;
-}
-
-// ─── Phase Transitions ───
-
-const PHASES = [
-  'lobby', 'case_open', 'private_memory', 'opening_statements',
-  'cross_talk', 'investigation', 'confidence_lock',
-  'final_reconstruction', 'reveal', 'recap'
-];
-
-function advancePhase(room) {
-  const currentIdx = PHASES.indexOf(room.status);
-  if (currentIdx !== -1 && currentIdx < PHASES.length - 1) {
-    transitionToPhase(room, PHASES[currentIdx + 1]);
-  }
-}
-
-function transitionToPhase(room, newPhase) {
-  room.status = newPhase;
-  clearTimer(room);
-  room.objection = { active: false, playerId: null, playerName: null };
-
-  let duration = 0;
-  switch (newPhase) {
-    case 'case_open': duration = 12; break;
-    case 'private_memory': duration = 30; break;
-    case 'opening_statements': room.testimonySpeakerIdx = 0; duration = 20; break;
-    case 'cross_talk': duration = 90; break;
-    case 'investigation': duration = 180; break;
-    case 'confidence_lock': duration = 25; break;
-    case 'final_reconstruction': duration = 60; break;
-    case 'reveal': duration = 25; break;
-    case 'recap': duration = 0; calculateScoring(room); break;
-  }
-
-  broadcastRoomState(room);
-
-  if (duration > 0) {
-    startTimer(room, duration, () => {
-      if (room.status === 'opening_statements') {
-        room.testimonySpeakerIdx++;
-        if (room.testimonySpeakerIdx < room.players.length) {
-          transitionToPhase(room, 'opening_statements');
-        } else {
-          transitionToPhase(room, 'cross_talk');
-        }
-      } else {
-        advancePhase(room);
-      }
-    });
-  }
-}
-
-// ─── Scoring ───
-
-function calculateScoring(room) {
-  const gt = room.caseData?.groundTruth;
-  const reconstruction = room.reconstruction;
-  if (!gt) return;
-
-  let correctCategories = 0;
-  if (reconstruction.who === gt.who) correctCategories++;
-  if (reconstruction.where === gt.where) correctCategories++;
-  if (reconstruction.when === gt.when) correctCategories++;
-  if (reconstruction.how === gt.how) correctCategories++;
-  if (reconstruction.why === gt.why) correctCategories++;
-
-  room.trustPoints = correctCategories * 20;
-
-  const totalLocked = room.players.filter(p => p.currentLock !== null).length;
-  const incorrectCount = room.players.filter(p => p.currentLock && !p.currentLock.isCorrect).length;
-
-  const highlights = [];
-
-  room.players.forEach(player => {
-    let delta = 0;
-    const isCorrect = player.currentLock ? player.currentLock.isCorrect : false;
-
-    if (player.currentLock && player.currentStake) {
-      if (isCorrect) {
-        if (player.currentStake === 'Hunch') delta += 10;
-        if (player.currentStake === 'Confident') delta += 25;
-        if (player.currentStake === 'Certain') delta += 50;
-        if (totalLocked > 1 && (incorrectCount / totalLocked) > 0.5) {
-          delta += 20;
-          player.minorityReportTriggered = true;
-        } else {
-          player.minorityReportTriggered = false;
-        }
-      } else {
-        if (player.currentStake === 'Hunch') delta += 0;
-        if (player.currentStake === 'Confident') delta -= 10;
-        if (player.currentStake === 'Certain') delta -= 25;
-        player.minorityReportTriggered = false;
-      }
-    }
-
-    player.lastScoreDelta = delta;
-    player.score += delta;
-
-    let ratingDelta = 0;
-    if (player.currentStake === 'Certain') ratingDelta = isCorrect ? +15 : -25;
-    else if (player.currentStake === 'Confident') ratingDelta = isCorrect ? +8 : -10;
-    else if (player.currentStake === 'Hunch') ratingDelta = isCorrect ? +3 : 0;
-    player.detectiveRating = Math.max(500, (player.detectiveRating || 1000) + ratingDelta);
-  });
-
-  // Build highlights
-  const confidentWrong = room.players.find(p => p.currentStake === 'Certain' && p.currentLock && !p.currentLock.isCorrect);
-  if (confidentWrong) {
-    highlights.push({ type: 'blunder', text: `${confidentWrong.name} was absolutely Certain of their memory... but it was completely fabricated!` });
-  }
-  const hero = room.players.find(p => p.minorityReportTriggered);
-  if (hero) {
-    highlights.push({ type: 'hero', text: `${hero.name} was the lone voice of reason, standing by a memory that the rest of the table doubted!` });
-  }
-  const allCorrect = room.players.length > 0 && room.players.every(p => p.currentLock && p.currentLock.isCorrect);
-  if (allCorrect) {
-    highlights.push({ type: 'synergy', text: 'The table shares a singular consciousness: Every single detective locked in a correct memory!' });
-  }
-  if (highlights.length === 0) {
-    highlights.push({ type: 'info', text: `Investigation complete. The team achieved a ${room.trustPoints}% reconstruction accuracy.` });
-  }
-  room.highlights = highlights;
-}
+export { setIO, rooms } from './roomManager.js';
+export { calculateScoring } from './scoring.js';
+export { PHASES } from './phaseManager.js';
 
 // ─── Board Conflict Check ───
 
@@ -368,7 +91,6 @@ export function handleJoinRoom(socket, code, nickname) {
   const room = rooms.get(roomCode);
   if (!room) { socket.emit('game_error', 'Room not found.'); return; }
 
-  // Allow join as spectator if game started
   if (room.status !== 'lobby') {
     handleJoinAsSpectator(socket, roomCode);
     return;
@@ -413,7 +135,6 @@ export function handleStartGame(socketId, themeId) {
   const allReady = room.players.every(p => p.isReady);
   if (!allReady) { getIO().to(socketId).emit('game_error', 'All players must be ready.'); return; }
 
-  // Reset game state
   room.board = [];
   room.lockedPlayerIds = new Set();
   room.chats = [];
@@ -422,10 +143,8 @@ export function handleStartGame(socketId, themeId) {
   room.reconstruction = { who: null, where: null, when: null, how: null, why: null, evidenceNotes: '' };
   room.players.forEach(p => { p.currentLock = null; p.currentStake = null; p.lastScoreDelta = 0; });
 
-  // Generate case data
   room.caseData = generateCase(room.players.length, themeId);
 
-  // Distribute private hands
   room.players.forEach((player, idx) => {
     const facts = room.caseData.playersFacts[`player-${idx}`];
     if (facts) {

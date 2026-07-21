@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { io } from 'socket.io-client';
 import { useGameStore } from './store/gameStore';
+import { useUIStore } from './store/uiStore';
+import { useMediaQuery } from './hooks/useMediaQuery';
+import { useSocket } from './hooks/useSocket';
 import Lobby from './components/Lobby';
 import CaseOpen from './components/CaseOpen';
 import PrivateMemory from './components/PrivateMemory';
@@ -9,21 +11,10 @@ import InvestigationBoard from './components/InvestigationBoard';
 import ConfidenceLock from './components/ConfidenceLock';
 import TruthReveal from './components/TruthReveal';
 import Recap from './components/Recap';
-import { Volume2, VolumeX, ShieldAlert, Award, MessageSquare, AlertCircle, Copy, Check, X, MessageCircle } from 'lucide-react';
-// sound effects removed for debugging
+import { ChatSidebar } from './components/ChatSidebar';
+import { Volume2, VolumeX, ShieldAlert, MessageSquare, AlertCircle, Copy, Check, MessageCircle } from 'lucide-react';
 
 const SOCKET_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001' : (import.meta.env.VITE_SOCKET_URL || window.location.origin);
-
-function useMediaQuery(query) {
-  const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const listener = (e) => setMatches(e.matches);
-    media.addEventListener('change', listener);
-    return () => media.removeEventListener('change', listener);
-  }, [query]);
-  return matches;
-}
 
 function App() {
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -32,58 +23,16 @@ function App() {
 
   const store = useGameStore();
   const {
-    socket, roomCode, playerId, playerName, status, phaseTimer,
+    roomCode, playerId, playerName, status, phaseTimer,
     players, board, caseData, reconstruction, objection,
     testimonySpeakerIdx, lockedPlayerIds, chats, privateHand,
-    errorMsg, showChatPanel, mobileChatOpen, copied,
     highlights, trustPoints
   } = store;
 
-  // Initialize socket connection
-  useEffect(() => {
-    const newSocket = io(SOCKET_URL, { timeout: 45000 });
-    store.setSocket(newSocket);
+  const uiStore = useUIStore();
+  const { errorMsg, showChatPanel, mobileChatOpen, copied } = uiStore;
 
-    newSocket.on('connect', () => {
-      store.setConnected(true);
-      store.setError('');
-    });
-    newSocket.on('disconnect', () => store.setConnected(false));
-    newSocket.on('connect_error', () => store.setError('Connection failed. Retrying...'));
-
-    newSocket.on('room_created', ({ roomCode, playerId, players }) => {
-      store.setRoomCreated(roomCode, playerId, players);
-    });
-
-    newSocket.on('joined_successfully', ({ roomCode, playerId, players }) => {
-      store.setJoined(roomCode, playerId, players);
-    });
-
-    newSocket.on('room_updated', (data) => {
-      store.setRoomUpdated(data);
-    });
-
-    newSocket.on('private_hand', ({ hand }) => {
-      store.setPrivateHand(hand);
-    });
-
-    newSocket.on('game_error', ({ message }) => {
-      store.setError(message);
-    });
-
-    newSocket.on('room_cleared', () => {
-      store.clearRoom();
-    });
-
-    newSocket.on('kicked', () => {
-      store.clearRoom();
-      store.setError('You were removed from the room.');
-    });
-
-    return () => {
-      newSocket.disconnect();
-    };
-  }, []);
+  const { emit } = useSocket(SOCKET_URL);
 
   // Auto-scroll chat
   useEffect(() => {
@@ -94,20 +43,18 @@ function App() {
 
   // Mobile: hide sidebar by default
   useEffect(() => {
-    if (isMobile) store.setShowChatPanel(false);
+    if (isMobile) uiStore.setShowChatPanel(false);
   }, [isMobile]);
 
   const toggleChat = useCallback(() => {
     if (isMobile) {
-      store.setMobileChatOpen(!mobileChatOpen);
+      uiStore.setMobileChatOpen(!mobileChatOpen);
     } else {
-      store.setShowChatPanel(!showChatPanel);
+      uiStore.setShowChatPanel(!showChatPanel);
     }
   }, [isMobile, mobileChatOpen, showChatPanel]);
 
   // Socket event helpers
-  const emit = (event, data) => { if (socket) socket.emit(event, data); };
-
   const handleCreateRoom = (name) => {
     store.setPlayerName(name);
     emit('create_room', name);
@@ -118,12 +65,8 @@ function App() {
     emit('join_room', { code, nickname: name });
   };
 
-  const handleStartGame = (themeId) => {
-    emit('start_game', { themeId });
-  };
-  const handleToggleReady = () => {
-    emit('toggle_ready');
-  };
+  const handleStartGame = (themeId) => emit('start_game', { themeId });
+  const handleToggleReady = () => emit('toggle_ready');
 
   const handlePlaceCard = (fact, category, because) => emit('place_card', { fact, category, because });
   const handleRemoveCard = (boardItemId) => emit('remove_card', { boardItemId });
@@ -145,8 +88,8 @@ function App() {
   const handleCopyCode = () => {
     if (!roomCode) return;
     navigator.clipboard.writeText(roomCode);
-    store.setCopied(true);
-    setTimeout(() => store.setCopied(false), 2000);
+    uiStore.setCopied(true);
+    setTimeout(() => uiStore.setCopied(false), 2000);
   };
 
   const isHost = players.find(p => p.id === playerId)?.isHost;
@@ -435,57 +378,29 @@ function App() {
             setChatInput={setChatInput}
             handleSendChat={handleSendChat}
             chatEndRef={chatEndRef}
+            isMobile={false}
           />
         )}
       </div>
 
       {/* Mobile Chat Drawer */}
       {isMobile && mobileChatOpen && (
-        <div style={{
-          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1000,
-          display: 'flex', flexDirection: 'column',
-          background: 'rgba(7, 8, 10, 0.85)', backdropFilter: 'blur(12px)'
-        }} className="chat-drawer-open">
-          <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', backgroundColor: 'var(--bg-raised)' }}>
-            <h3 style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-              <MessageSquare size={14} style={{ color: 'var(--accent-purple)' }} />
-              Testimony Log
-            </h3>
-            <button onClick={() => store.setMobileChatOpen(false)} style={{ background: 'transparent', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '4px' }}>
-              <X size={18} />
-            </button>
-          </div>
-          <div className="chat-drawer-body" style={{ flex: 1, padding: '12px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-            {chats.length === 0 ? (
-              <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', marginTop: '24px' }}>Awaiting statements.</div>
-            ) : (
-              chats.map((chat) => {
-                const isSys = chat.playerId === 'system';
-                const isMe = chat.playerId === playerId;
-                return (
-                  <div key={chat.id} style={{ alignSelf: isSys ? 'center' : isMe ? 'flex-end' : 'flex-start', maxWidth: '90%', display: 'flex', flexDirection: 'column', alignItems: isSys ? 'center' : isMe ? 'flex-end' : 'flex-start' }}>
-                    {!isSys && <span style={{ fontSize: '0.65rem', color: 'var(--text-secondary)', marginBottom: '2px', fontWeight: '600' }}>{chat.playerName}</span>}
-                    <div style={{ padding: '6px 10px', borderRadius: '6px', fontSize: '0.8rem', lineHeight: '1.4', background: isSys ? 'rgba(255, 255, 255, 0.02)' : isMe ? 'var(--accent-purple)' : 'var(--bg-raised)', color: isMe ? '#ffffff' : isSys ? 'var(--text-secondary)' : 'var(--text-primary)', border: '1px solid var(--border-glass)', borderBottomRightRadius: isMe ? '1px' : '6px', borderBottomLeftRadius: !isMe && !isSys ? '1px' : '6px', textAlign: isSys ? 'center' : 'left' }}>{chat.text}</div>
-                    <span className="font-tech" style={{ fontSize: '0.55rem', color: 'var(--text-muted)', marginTop: '2px' }}>{chat.timestamp}</span>
-                  </div>
-                );
-              })
-            )}
-            <div ref={chatEndRef} />
-          </div>
-          <form onSubmit={handleSendChat} style={{ padding: '12px 16px', borderTop: '1px solid var(--border-glass)', backgroundColor: 'var(--bg-raised)' }}>
-            <div style={{ display: 'flex', gap: '8px' }}>
-              <input type="text" placeholder="Record note/testimony..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} style={{ padding: '8px 12px', fontSize: '0.85rem', flex: 1 }} autoFocus />
-              <button type="submit" className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem', flexShrink: 0 }}>Send</button>
-            </div>
-          </form>
-        </div>
+        <ChatSidebar
+          chats={chats}
+          playerId={playerId}
+          chatInput={chatInput}
+          setChatInput={setChatInput}
+          handleSendChat={handleSendChat}
+          chatEndRef={chatEndRef}
+          isMobile={true}
+          onClose={() => uiStore.setMobileChatOpen(false)}
+        />
       )}
 
       {/* Mobile chat FAB */}
       {isMobile && !mobileChatOpen && status !== 'lobby' && (
         <button
-          onClick={() => store.setMobileChatOpen(true)}
+          onClick={() => uiStore.setMobileChatOpen(true)}
           style={{
             position: 'fixed', bottom: '60px', right: '16px', zIndex: 100,
             width: '48px', height: '48px', borderRadius: '50%',
@@ -551,43 +466,6 @@ function App() {
         )}
       </footer>
     </div>
-  );
-}
-
-function ChatSidebar({ chats, playerId, chatInput, setChatInput, handleSendChat, chatEndRef }) {
-  return (
-    <aside style={{ display: 'flex', flexDirection: 'column', background: 'rgba(7, 8, 10, 0.5)', borderLeft: 'none' }}>
-      <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border-glass)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <h3 style={{ fontSize: '0.8rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)' }}>
-          <MessageSquare size={14} style={{ color: 'var(--accent-purple)' }} />
-          Testimony Log
-        </h3>
-      </div>
-      <div style={{ flex: 1, padding: '16px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-        {chats.length === 0 ? (
-          <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', textAlign: 'center', marginTop: '24px' }}>Awaiting statements.</div>
-        ) : (
-          chats.map((chat) => {
-            const isSys = chat.playerId === 'system';
-            const isMe = chat.playerId === playerId;
-            return (
-              <div key={chat.id} style={{ alignSelf: isSys ? 'center' : isMe ? 'flex-end' : 'flex-start', maxWidth: '90%', display: 'flex', flexDirection: 'column', alignItems: isSys ? 'center' : isMe ? 'flex-end' : 'flex-start' }}>
-                {!isSys && <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', marginBottom: '2px', fontWeight: '600' }}>{chat.playerName}</span>}
-                <div style={{ padding: '8px 12px', borderRadius: '6px', fontSize: '0.8rem', lineHeight: '1.4', background: isSys ? 'rgba(255, 255, 255, 0.02)' : isMe ? 'var(--accent-purple)' : 'var(--bg-raised)', color: isMe ? '#ffffff' : isSys ? 'var(--text-secondary)' : 'var(--text-primary)', border: '1px solid var(--border-glass)', borderBottomRightRadius: isMe ? '1px' : '6px', borderBottomLeftRadius: !isMe && !isSys ? '1px' : '6px', textAlign: isSys ? 'center' : 'left' }}>{chat.text}</div>
-                <span className="font-tech" style={{ fontSize: '0.6rem', color: 'var(--text-muted)', marginTop: '2px' }}>{chat.timestamp}</span>
-              </div>
-            );
-          })
-        )}
-        <div ref={chatEndRef} />
-      </div>
-      <form onSubmit={handleSendChat} style={{ padding: '16px', borderTop: '1px solid var(--border-glass)', backgroundColor: 'var(--bg-raised)' }}>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <input type="text" placeholder="Record note/testimony..." value={chatInput} onChange={(e) => setChatInput(e.target.value)} style={{ padding: '8px 12px', fontSize: '0.8rem' }} />
-          <button type="submit" className="btn-primary" style={{ padding: '8px 12px', fontSize: '0.8rem' }}>Send</button>
-        </div>
-      </form>
-    </aside>
   );
 }
 

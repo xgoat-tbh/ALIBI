@@ -34,21 +34,15 @@ export const useGameStore = create((set, get) => ({
   // Private hand (this client only)
   privateHand: [],
 
-  // UI
-  errorMsg: '',
-  showChatPanel: true,
-  mobileChatOpen: false,
-  copied: false,
-
   // Actions
   setSocket: (socket) => set({ socket }),
   setConnected: (isConnected) => set({ isConnected }),
 
   setRoomCreated: (roomCode, playerId, players) =>
-    set({ roomCode, playerId, status: 'lobby', errorMsg: '', players }),
+    set({ roomCode, playerId, status: 'lobby', players }),
 
   setJoined: (roomCode, playerId, players) =>
-    set({ roomCode, playerId, status: 'lobby', errorMsg: '', players }),
+    set({ roomCode, playerId, status: 'lobby', players }),
 
   setRoomUpdated: (data) => set((state) => ({
     status: data.status || state.status,
@@ -69,8 +63,6 @@ export const useGameStore = create((set, get) => ({
 
   setPrivateHand: (hand) => set({ privateHand: hand }),
 
-  setError: (errorMsg) => set({ errorMsg }),
-
   addChat: (chat) => set((state) => ({ chats: [...state.chats, chat] })),
 
   setPlayerName: (playerName) => set({ playerName }),
@@ -90,7 +82,6 @@ export const useGameStore = create((set, get) => ({
     trustPoints: 0,
     highlights: [],
     spectators: [],
-    errorMsg: '',
   }),
 
   clearRoom: () => set({
@@ -105,10 +96,5 @@ export const useGameStore = create((set, get) => ({
     lockedPlayerIds: new Set(),
     trustPoints: 0,
     highlights: [],
-    errorMsg: '',
   }),
-
-  setShowChatPanel: (showChatPanel) => set({ showChatPanel }),
-  setMobileChatOpen: (mobileChatOpen) => set({ mobileChatOpen }),
-  setCopied: (copied) => set({ copied }),
 }))
