@@ -3,7 +3,7 @@ import { Plus, Users, Copy, Check, Shield, ArrowRight, User } from 'lucide-react
 import CustomDropdown from './CustomDropdown';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function Lobby({ roomCode, players, playerId, isHost, onCreateRoom, onJoinRoom, onStartGame, onToggleReady }) {
+function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinRoom, onStartGame, onToggleReady }) {
   const [name, setName] = useState('');
   const [inputCode, setInputCode] = useState('');
   const [selectedTheme, setSelectedTheme] = useState('random');

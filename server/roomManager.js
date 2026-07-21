@@ -118,9 +118,10 @@ export function broadcastRoomState(room) {
   room.spectators.forEach(sId => {
     i.to(sId).emit('room_updated', getFilteredRoomState(room, sId));
   });
-  room.players.forEach((p, idx) => {
+  room.players.forEach(p => {
     if (room.caseData && room.caseData.playersFacts) {
-      const facts = room.caseData.playersFacts[`player-${idx}`];
+      const key = `player-${p.originalIndex ?? room.players.indexOf(p)}`;
+      const facts = room.caseData.playersFacts[key];
       if (facts) {
         i.to(p.id).emit('private_hand', { hand: facts });
       }

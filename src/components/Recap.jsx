@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Award, ShieldCheck, RotateCcw, Activity } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
@@ -7,23 +7,28 @@ function Recap({
   reconstruction,
   onUpdateReconstruction,
   playerId,
-  players,
-  lockedPlayerIds,
-  isHost,
+  players = [],
+  lockedPlayerIds = new Set(),
+  isHost = false,
   highlights = [],
   trustPoints = 0,
   onPlayAgain
 }) {
 
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const pendingRecon = useRef(null);
+  const reconTimer = useRef(null);
 
   // FINAL RECONSTRUCTION
   if (status === 'final_reconstruction') {
     const handleFieldChange = (field, value) => {
-      onUpdateReconstruction({
-        ...reconstruction,
-        [field]: value
-      });
+      const updated = { ...(pendingRecon.current || reconstruction), [field]: value };
+      pendingRecon.current = updated;
+      if (reconTimer.current) clearTimeout(reconTimer.current);
+      reconTimer.current = setTimeout(() => {
+        onUpdateReconstruction(updated);
+        pendingRecon.current = null;
+      }, 300);
     };
 
     return (

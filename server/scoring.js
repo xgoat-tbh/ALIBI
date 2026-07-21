@@ -1,14 +1,33 @@
+function normalizeText(s) {
+  if (!s) return '';
+  return String(s).toLowerCase().trim().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ');
+}
+
+function matchCategory(input, truth) {
+  const a = normalizeText(input);
+  const b = normalizeText(truth);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a.includes(b) || b.includes(a)) return true;
+  // One-word match: if either side is a single word, check if the other contains it
+  const aWords = a.split(' ');
+  const bWords = b.split(' ');
+  if (aWords.length === 1 && bWords.includes(aWords[0])) return true;
+  if (bWords.length === 1 && aWords.includes(bWords[0])) return true;
+  return false;
+}
+
 export function calculateScoring(room) {
   const gt = room.caseData?.groundTruth;
   const reconstruction = room.reconstruction;
   if (!gt) return;
 
   let correctCategories = 0;
-  if (reconstruction.who === gt.who) correctCategories++;
-  if (reconstruction.where === gt.where) correctCategories++;
-  if (reconstruction.when === gt.when) correctCategories++;
-  if (reconstruction.how === gt.how) correctCategories++;
-  if (reconstruction.why === gt.why) correctCategories++;
+  if (matchCategory(reconstruction.who, gt.who)) correctCategories++;
+  if (matchCategory(reconstruction.where, gt.where)) correctCategories++;
+  if (matchCategory(reconstruction.when, gt.when)) correctCategories++;
+  if (matchCategory(reconstruction.how, gt.how)) correctCategories++;
+  if (matchCategory(reconstruction.why, gt.why)) correctCategories++;
 
   room.trustPoints = correctCategories * 20;
 

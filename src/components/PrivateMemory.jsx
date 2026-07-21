@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { User, MapPin, Clock, Eye, Lightbulb, Shield } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function PrivateMemory({ privateHand }) {
+function PrivateMemory({ privateHand = [] }) {
   const isMobile = useMediaQuery('(max-width: 768px)');
 
   const getCategoryIcon = (category) => {

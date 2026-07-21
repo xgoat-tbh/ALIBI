@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { User, MapPin, Clock, Eye, Lightbulb, Shield, ShieldCheck, Target } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function ConfidenceLock({ privateHand, playerId, lockedPlayerIds, players, onLockConfidence }) {
+function ConfidenceLock({ privateHand = [], playerId, lockedPlayerIds = new Set(), players = [], onLockConfidence }) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [selectedFact, setSelectedFact] = useState(null);
   const [selectedStake, setSelectedStake] = useState(null);
-  const [hasLocked, setHasLocked] = useState(false);
+  const [acknowledgedLock, setAcknowledgedLock] = useState(false);
+  const hasLocked = acknowledgedLock || (lockedPlayerIds && lockedPlayerIds.has(playerId));
 
   const stakes = [
     {
@@ -38,7 +39,7 @@ function ConfidenceLock({ privateHand, playerId, lockedPlayerIds, players, onLoc
   const handleLockSubmit = () => {
     if (!selectedFact || !selectedStake) return;
     onLockConfidence(selectedFact, selectedStake);
-    setHasLocked(true);
+    setAcknowledgedLock(true);
   };
 
   const getCategoryIcon = (category) => {

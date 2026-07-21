@@ -8,6 +8,7 @@
   --bg-surface: rgba(14, 16, 22, 0.7);
   --bg-raised: rgba(22, 25, 34, 0.45);
   --bg-floating: #1a1d26;
+  --bg-app: #07080a;
   
   --accent-purple: #7c3aed;
   --accent-purple-dim: rgba(124, 58, 237, 0.12);
@@ -27,6 +28,7 @@
   /* Borders */
   --border-glass: rgba(255, 255, 255, 0.04);
   --border-glass-bright: rgba(255, 255, 255, 0.08);
+  --border-glass-raised: rgba(255, 255, 255, 0.06);
   --border-accent: rgba(124, 58, 237, 0.2);
 
   /* Radius */
@@ -301,22 +303,24 @@ input[type="text"]:focus, select:focus, textarea:focus {
 }
 
 /* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
 
-@keyframes scaleIn {
-  from { opacity: 0; transform: scale(0.98); }
-  to { opacity: 1; transform: scale(1); }
-}
+  @keyframes scaleIn {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+  }
 
-.animate-fade-in {
-  animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
+  .animate-fade-in {
+    animation: fadeIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 
-.animate-scale-in {
-  animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  .animate-scale-in {
+    animation: scaleIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
 
 /* Custom Scrollbars */
@@ -452,22 +456,24 @@ input[type="text"]:focus, select:focus, textarea:focus {
 }
 
 /* Mobile chat drawer animation */
-@keyframes slideUp {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-}
+@media (prefers-reduced-motion: no-preference) {
+  @keyframes slideUp {
+    from { transform: translateY(100%); }
+    to { transform: translateY(0); }
+  }
 
-@keyframes slideDown {
-  from { transform: translateY(0); }
-  to { transform: translateY(100%); }
-}
+  @keyframes slideDown {
+    from { transform: translateY(0); }
+    to { transform: translateY(100%); }
+  }
 
-.chat-drawer-open {
-  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
+  .chat-drawer-open {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 
-.chat-drawer-close {
-  animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  .chat-drawer-close {
+    animation: slideDown 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
 }
 
 /* Hide scrollbar on mobile chat */

@@ -146,6 +146,7 @@ export function handleStartGame(socketId, themeId) {
   room.caseData = generateCase(room.players.length, themeId);
 
   room.players.forEach((player, idx) => {
+    player.originalIndex = idx;
     const facts = room.caseData.playersFacts[`player-${idx}`];
     if (facts) {
       getIO().to(player.id).emit('private_hand', { hand: facts });
@@ -255,7 +256,15 @@ export function handleLockConfidence(socketId, { fact, stake }) {
   const player = room.players.find(p => p.id === socketId);
   if (!player) return;
 
-  player.currentLock = fact;
+  const playerIdx = player.originalIndex ?? room.players.indexOf(player);
+  const assignedFacts = room.caseData?.playersFacts?.[`player-${playerIdx}`];
+  const serverFact = assignedFacts?.find(f => f.id === fact.id);
+  if (!serverFact) {
+    getIO().to(socketId).emit('game_error', 'Invalid fact. Cannot lock confidence.');
+    return;
+  }
+
+  player.currentLock = serverFact;
   player.currentStake = stake;
   room.lockedPlayerIds.add(player.id);
   broadcastRoomState(room);
@@ -371,7 +380,7 @@ export function handleLeaveRoom(socketId) {
     if (specIdx >= 0) {
       room.spectators.splice(specIdx, 1);
       getIO().to(socketId).emit('room_cleared');
-      if (room.players.every(p => !p) && room.spectators.length === 0) { clearTimer(room); rooms.delete(code); }
+      if (room.players.length === 0 && room.spectators.length === 0) { clearTimer(room); rooms.delete(code); }
       return;
     }
 

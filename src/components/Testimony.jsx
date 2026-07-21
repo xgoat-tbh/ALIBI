@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Volume2, VolumeX, AlertCircle, Radio } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function Testimony({ status, players, testimonySpeakerIdx, playerId, privateHand }) {
+function Testimony({ status, players = [], testimonySpeakerIdx, playerId, privateHand = [] }) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const currentSpeaker = players[testimonySpeakerIdx];
   const isMeSpeaker = currentSpeaker?.id === playerId;

@@ -23,10 +23,10 @@ function App() {
 
   const store = useGameStore();
   const {
-    roomCode, playerId, playerName, status, phaseTimer,
-    players, board, caseData, reconstruction, objection,
-    testimonySpeakerIdx, lockedPlayerIds, chats, privateHand,
-    highlights, trustPoints
+    roomCode, playerId, playerName, status, phaseTimer = 0, isConnected,
+    players = [], board = [], caseData, reconstruction, objection,
+    testimonySpeakerIdx, lockedPlayerIds = new Set(), chats = [], privateHand = [],
+    highlights = [], trustPoints = 0
   } = store;
 
   const uiStore = useUIStore();
@@ -75,7 +75,9 @@ function App() {
   const handleObjection = () => emit('trigger_objection');
   const handleUpdateReconstruction = (recon) => emit('update_reconstruction', { reconstruction: recon });
   const handleLockConfidence = (fact, stake) => emit('lock_confidence', { fact, stake });
-  const handleHostNextPhase = () => emit('host_next_phase');
+  const handleHostNextPhase = () => {
+    if (window.confirm('Skip to the next phase?')) emit('host_next_phase');
+  };
   const handlePlayAgain = () => emit('play_again');
 
   const handleSendChat = (e) => {
@@ -87,12 +89,19 @@ function App() {
 
   const handleCopyCode = () => {
     if (!roomCode) return;
-    navigator.clipboard.writeText(roomCode);
+    navigator.clipboard.writeText(roomCode).catch(() => {
+      const ta = document.createElement('textarea');
+      ta.value = roomCode;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    });
     uiStore.setCopied(true);
     setTimeout(() => uiStore.setCopied(false), 2000);
   };
 
-  const isHost = players.find(p => p.id === playerId)?.isHost;
+  const isHost = players.find(p => p.id === playerId)?.isHost ?? false;
   const currentSpeaker = players[testimonySpeakerIdx];
 
   const getPhaseName = () => {
@@ -460,8 +469,8 @@ function App() {
         </div>
         {!isMobile && (
           <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '24px', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: 'var(--color-success)' }} />
-            <span>CONNECTED</span>
+            <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: isConnected ? 'var(--color-success)' : 'var(--color-danger)' }} />
+            <span>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</span>
           </div>
         )}
       </footer>

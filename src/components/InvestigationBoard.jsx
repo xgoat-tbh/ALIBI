@@ -3,7 +3,7 @@ import { User, MapPin, Clock, Eye, Lightbulb, Shield, AlertTriangle, Check, Arro
 import CustomDropdown from './CustomDropdown';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function InvestigationBoard({ board, privateHand, playerId, onPlaceCard, onRemoveCard, onChallenge, onRespondChallenge }) {
+function InvestigationBoard({ board = [], privateHand = [], playerId, onPlaceCard, onRemoveCard, onChallenge, onRespondChallenge }) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [selectedFact, setSelectedFact] = useState(null);
   const [becauseText, setBecauseText] = useState('');
@@ -139,7 +139,7 @@ function InvestigationBoard({ board, privateHand, playerId, onPlaceCard, onRemov
                           
                           {isMyCard && (
                             <button
-                              onClick={() => onRemoveCard(item.id)}
+                              onClick={() => { if (window.confirm('Remove this card from the board?')) onRemoveCard(item.id); }}
                               style={{ background: 'transparent', padding: '2px', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                               className="hover-brighten"
                             >
