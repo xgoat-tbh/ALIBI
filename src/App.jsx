@@ -30,7 +30,6 @@ function App() {
         <Route path="/" element={<LandingPage onOpenRules={() => setShowRules(true)} />} />
         <Route path="/room/:code" element={<GamePage onOpenRules={() => setShowRules(true)} />} />
       </Routes>
-
       {showRules && <RulesModal onClose={() => setShowRules(false)} />}
     </>
   );

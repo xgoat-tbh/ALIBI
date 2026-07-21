@@ -1,15 +1,9 @@
 import { create } from 'zustand'
 
-const initialReconstruction = {
-  who: null, where: null, when: null, how: null, why: null, evidenceNotes: ''
-}
-
 export const useGameStore = create((set, get) => ({
-  // Connection
   socket: null,
   isConnected: false,
 
-  // Room
   roomCode: null,
   playerId: null,
   playerName: '',
@@ -18,93 +12,54 @@ export const useGameStore = create((set, get) => ({
   status: 'lobby',
   phaseTimer: 0,
   players: [],
-  board: [],
-  caseData: null,
-  reconstruction: { ...initialReconstruction },
-  objection: { active: false, playerId: null, playerName: null },
-  testimonySpeakerIdx: 0,
-  lockedPlayerIds: new Set(),
-  trustPoints: 0,
-  highlights: [],
   spectators: [],
-
-  // Chat
   chats: [],
 
-  // Private hand (this client only)
-  privateHand: [],
-  isSaboteur: false,
+  // LINKED-specific
+  currentPrompt: null,
+  currentRound: 0,
+  totalRounds: 8,
+  mySubmission: '',
+  revealGroups: [],
+  standings: [],
 
   // Actions
   setSocket: (socket) => set({ socket }),
   setConnected: (isConnected) => set({ isConnected }),
 
   setRoomCreated: (roomCode, playerId, players) =>
-    set({ roomCode, playerId, status: 'lobby', players, isSaboteur: false }),
+    set({ roomCode, playerId, status: 'lobby', players }),
 
   setJoined: (roomCode, playerId, players) =>
-    set({ roomCode, playerId, status: 'lobby', players, isSaboteur: false }),
+    set({ roomCode, playerId, status: 'lobby', players }),
 
-  setRoomUpdated: (data) => set((state) => {
-    // Check if WE are the saboteur from the player list
-    const myPlayer = (data.players || state.players).find(p => p.id === state.playerId);
+  setMySubmission: (mySubmission) => set({ mySubmission }),
 
-    return {
-      status: data.status || state.status,
-      phaseTimer: data.phaseTimer ?? state.phaseTimer,
-      testimonySpeakerIdx: data.testimonySpeakerIdx ?? state.testimonySpeakerIdx,
-      objection: data.objection || state.objection,
-      board: data.board || state.board,
-      reconstruction: data.reconstruction || state.reconstruction,
-      players: data.players || state.players,
-      caseData: data.caseData || state.caseData,
-      lockedPlayerIds: new Set(data.lockedPlayerIds || []),
-      trustPoints: data.trustPoints ?? state.trustPoints,
-      highlights: data.highlights || state.highlights,
-      chats: data.chats || state.chats,
-      spectators: data.spectators || state.spectators,
-      phaseTimer: data.phaseTimer ?? state.phaseTimer,
-      isSaboteur: myPlayer ? myPlayer.isSaboteur : state.isSaboteur,
-    };
-  }),
-
-  setPrivateHand: (hand) => set({ privateHand: hand }),
-  setSaboteur: (isSaboteur) => set({ isSaboteur }),
+  setRoomUpdated: (data) => set((state) => ({
+    status: data.status || state.status,
+    phaseTimer: data.phaseTimer ?? state.phaseTimer,
+    players: data.players || state.players,
+    chats: data.chats || state.chats,
+    spectators: data.spectators || state.spectators,
+    currentPrompt: data.currentPrompt !== undefined ? data.currentPrompt : state.currentPrompt,
+    currentRound: data.currentRound !== undefined ? data.currentRound : state.currentRound,
+    totalRounds: data.totalRounds || state.totalRounds,
+    revealGroups: data.revealGroups || state.revealGroups,
+    standings: data.standings || state.standings,
+  })),
 
   addChat: (chat) => set((state) => ({ chats: [...state.chats, chat] })),
-
   setPlayerName: (playerName) => set({ playerName }),
 
   reset: () => set({
-    status: 'lobby',
-    phaseTimer: 0,
-    players: [],
-    board: [],
-    caseData: null,
-    reconstruction: { ...initialReconstruction },
-    objection: { active: false, playerId: null, playerName: null },
-    testimonySpeakerIdx: 0,
-    lockedPlayerIds: new Set(),
-    privateHand: [],
-    chats: [],
-    trustPoints: 0,
-    highlights: [],
-    spectators: [],
-    isSaboteur: false,
+    status: 'lobby', phaseTimer: 0, players: [], chats: [],
+    spectators: [], currentPrompt: null, currentRound: 0,
+    revealGroups: [], standings: [], mySubmission: '',
   }),
 
   clearRoom: () => set({
-    roomCode: null,
-    playerId: null,
-    players: [],
-    board: [],
-    caseData: null,
-    reconstruction: { ...initialReconstruction },
-    privateHand: [],
-    chats: [],
-    lockedPlayerIds: new Set(),
-    trustPoints: 0,
-    highlights: [],
-    isSaboteur: false,
+    roomCode: null, playerId: null, players: [], chats: [],
+    spectators: [], currentPrompt: null, currentRound: 0,
+    revealGroups: [], standings: [], mySubmission: '',
   }),
 }))

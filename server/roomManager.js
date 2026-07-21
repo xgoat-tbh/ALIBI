@@ -10,8 +10,6 @@ export function getIO() {
   return io;
 }
 
-// ─── Utilities ───
-
 const CHARS = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
 export function generateRoomCode() {
@@ -23,15 +21,6 @@ export function generateRoomCode() {
   return code;
 }
 
-export function shuffleArray(arr) {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
 export function stripHtml(s) {
   if (!s) return '';
   return s.replace(/<[^>]*>/g, '').replace(/[&<>"']/g, '');
@@ -39,12 +28,10 @@ export function stripHtml(s) {
 
 export function findPlayerRoom(socketId) {
   for (const room of rooms.values()) {
-    if (room.players.some(p => p.id === socketId) || room.spectators.includes(socketId)) return room;
+    if (room.players.some(p => p.id === socketId)) return room;
   }
   return null;
 }
-
-// ─── Rate Limiting ───
 
 const rateLimitMap = new Map();
 
@@ -67,24 +54,11 @@ setInterval(() => {
   }
 }, 300000);
 
-// ─── Filtered State & Broadcast ───
-
 export function getFilteredRoomState(room, playerId) {
-  const isEnded = room.status === 'reveal' || room.status === 'recap';
-  const inGame = room.status !== 'lobby';
-  const isSpectator = room.spectators.includes(playerId);
-  const player = room.players.find(p => p.id === playerId);
-
   return {
     code: room.code,
     status: room.status,
     phaseTimer: room.phaseTimer,
-    testimonySpeakerIdx: room.testimonySpeakerIdx,
-    objection: room.objection,
-    board: room.board,
-    reconstruction: room.reconstruction,
-    trustPoints: room.trustPoints,
-    highlights: room.highlights || [],
     chats: room.chats.slice(-100),
     players: room.players.map(p => {
       const isSelf = p.id === playerId;
@@ -92,23 +66,19 @@ export function getFilteredRoomState(room, playerId) {
         id: p.id,
         name: p.name,
         score: p.score,
-        detectiveRating: p.detectiveRating,
         isHost: p.isHost,
-        isSaboteur: (isSelf || isEnded) ? !!p.isSaboteur : false,
         isBot: !!p.isBot,
-        currentStake: (isSelf || isEnded) ? p.currentStake : null,
-        currentLock: (isSelf || isEnded) ? p.currentLock : null,
+        isReady: p.isReady,
         lastScoreDelta: p.lastScoreDelta,
-        isReady: p.isReady
+        mySubmission: isSelf ? room.submissions?.find(s => s.playerId === p.id)?.word || '' : undefined
       };
     }),
-    caseData: inGame ? {
-      themeTitle: room.caseData?.themeTitle,
-      themeDescription: room.caseData?.themeDescription,
-      groundTruth: (isEnded || isSpectator) ? room.caseData?.groundTruth : null
-    } : null,
-    lockedPlayerIds: Array.from(room.lockedPlayerIds),
-    spectators: room.spectators
+    currentPrompt: room.currentPrompt,
+    currentRound: room.currentRound,
+    totalRounds: 8,
+    revealGroups: room.revealGroups,
+    standings: room.standings,
+    spectators: []
   };
 }
 
@@ -117,18 +87,4 @@ export function broadcastRoomState(room) {
   room.players.forEach(p => {
     i.to(p.id).emit('room_updated', getFilteredRoomState(room, p.id));
   });
-  room.spectators.forEach(sId => {
-    i.to(sId).emit('room_updated', getFilteredRoomState(room, sId));
-  });
-  room.players.forEach(p => {
-    if (room.caseData && room.caseData.playersFacts) {
-      const key = `player-${p.originalIndex ?? room.players.indexOf(p)}`;
-      const facts = room.caseData.playersFacts[key];
-      if (facts) {
-        i.to(p.id).emit('private_hand', { hand: facts });
-      }
-    }
-  });
-  // Trigger bot AI after state broadcast (lazy import to avoid cycle at module level)
-  import('./botManager.js').then(({ processBots }) => processBots(room)).catch(() => {});
 }

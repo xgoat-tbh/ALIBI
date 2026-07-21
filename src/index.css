@@ -3,33 +3,40 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap');
 
 :root {
-  /* Colors */
-  --bg-base: #07080a;
-  --bg-surface: rgba(14, 16, 22, 0.7);
-  --bg-raised: rgba(22, 25, 34, 0.45);
-  --bg-floating: #1a1d26;
-  --bg-app: #07080a;
-  
-  --accent-purple: #7c3aed;
-  --accent-purple-dim: rgba(124, 58, 237, 0.12);
-  --accent-purple-glow: rgba(124, 58, 237, 0.2);
-  
-  --color-success: #10b981;
-  --color-success-dim: rgba(16, 185, 129, 0.08);
-  --color-danger: #f43f5e;
-  --color-danger-dim: rgba(244, 63, 94, 0.08);
-  --color-warning: #f59e0b;
-  --color-warning-dim: rgba(245, 158, 11, 0.08);
-  
-  --text-primary: #ededf0;
-  --text-secondary: #9ea1a8;
-  --text-muted: #5e6168;
-  
-  /* Borders */
+  /* Candy Palette */
+  --bg-base: #0a0d0f;
+  --bg-surface: rgba(12, 15, 18, 0.75);
+  --bg-raised: rgba(18, 22, 28, 0.5);
+  --bg-floating: #161b22;
+  --bg-app: #0a0d0f;
+
+  --accent-primary: #ff5e5b;
+  --accent-primary-dim: rgba(255, 94, 91, 0.12);
+  --accent-primary-glow: rgba(255, 94, 91, 0.2);
+
+  --accent-secondary: #d4ff00;
+  --accent-secondary-dim: rgba(212, 255, 0, 0.12);
+
+  --color-match: #00f5d4;
+  --color-match-dim: rgba(0, 245, 212, 0.1);
+  --color-unique: #f15bb5;
+  --color-unique-dim: rgba(241, 91, 181, 0.1);
+
+  --color-success: #00f5d4;
+  --color-success-dim: rgba(0, 245, 212, 0.1);
+  --color-danger: #ff5e5b;
+  --color-danger-dim: rgba(255, 94, 91, 0.1);
+  --color-warning: #ffd23f;
+  --color-warning-dim: rgba(255, 210, 63, 0.1);
+
+  --text-primary: #f8f9fa;
+  --text-secondary: #9ba1b0;
+  --text-muted: #5d6370;
+
   --border-glass: rgba(255, 255, 255, 0.04);
   --border-glass-bright: rgba(255, 255, 255, 0.08);
   --border-glass-raised: rgba(255, 255, 255, 0.06);
-  --border-accent: rgba(124, 58, 237, 0.2);
+  --border-accent: rgba(255, 94, 91, 0.25);
 
   /* Radius */
   --radius-button: 6px;
@@ -190,12 +197,12 @@ button:active {
 }
 
 .btn-primary {
-  background-color: var(--accent-purple);
+  background-color: var(--accent-primary);
   color: #ffffff;
 }
 
 .btn-primary:hover {
-  background-color: #8b5cf6;
+  background-color: #ff4036;
 }
 
 .btn-primary:disabled {
@@ -267,8 +274,8 @@ button:active {
   left: 0;
   width: 100%;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent-purple), transparent);
-  box-shadow: 0 -2px 10px var(--accent-purple);
+  background: linear-gradient(90deg, transparent, var(--accent-primary), transparent);
+  box-shadow: 0 -2px 10px var(--accent-primary);
 }
 
 /* Form Inputs */
@@ -284,9 +291,9 @@ input[type="text"], select, textarea {
 }
 
 input[type="text"]:focus, select:focus, textarea:focus {
-  border-color: var(--accent-purple);
+  border-color: var(--accent-primary);
   background: rgba(0, 0, 0, 0.45);
-  box-shadow: 0 0 0 1px var(--accent-purple);
+  box-shadow: 0 0 0 1px var(--accent-primary);
 }
 
 .screenshot-input-wrapper {
@@ -306,8 +313,8 @@ input[type="text"]:focus, select:focus, textarea:focus {
 }
 
 .screenshot-input-wrapper input:focus {
-  border-color: var(--accent-purple);
-  box-shadow: 0 0 0 1px var(--accent-purple);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 0 1px var(--accent-primary);
 }
 
 /* Animations */
