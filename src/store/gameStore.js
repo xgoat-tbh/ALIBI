@@ -20,6 +20,7 @@ export const useGameStore = create((set) => ({
   mySubmission: '',
   revealGroups: [],
   standings: [],
+  tiebreakerPlayers: [],
 
   setSocket: (socket) => set({ socket }),
   setConnected: (isConnected) => set({ isConnected }),
@@ -45,6 +46,7 @@ export const useGameStore = create((set) => ({
       totalRounds: data.totalRounds || state.totalRounds,
       revealGroups: data.revealGroups || state.revealGroups,
       standings: data.standings || state.standings,
+      tiebreakerPlayers: data.tiebreakerPlayers || state.tiebreakerPlayers,
       mySubmission: promptChanged ? '' : state.mySubmission,
     };
   }),

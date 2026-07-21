@@ -62,6 +62,7 @@ export function getFilteredRoomState(room, playerId) {
     chats: room.chats.slice(-100),
     players: room.players.map(p => {
       const isSelf = p.id === playerId;
+      const isTiebreakerPlayer = room.tiebreakerPlayers?.includes(p.id);
       return {
         id: p.id,
         name: p.name,
@@ -70,6 +71,7 @@ export function getFilteredRoomState(room, playerId) {
         isBot: !!p.isBot,
         isReady: p.isReady,
         lastScoreDelta: p.lastScoreDelta,
+        isTiebreakerPlayer: !!isTiebreakerPlayer,
         mySubmission: isSelf ? room.submissions?.find(s => s.playerId === p.id)?.word || '' : undefined
       };
     }),
@@ -78,6 +80,7 @@ export function getFilteredRoomState(room, playerId) {
     totalRounds: 8,
     revealGroups: room.revealGroups,
     standings: room.standings,
+    tiebreakerPlayers: room.tiebreakerPlayers || [],
     spectators: []
   };
 }

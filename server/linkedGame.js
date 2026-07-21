@@ -5,7 +5,6 @@ import { processBots } from './botManager.js';
 const TOTAL_ROUNDS = 8;
 const DROP_DURATION = 12;
 const REVEAL_DURATION = 5;
-const RESULTS_DURATION = 0;
 
 function levenshtein(a, b) {
   const m = a.length, n = b.length;
@@ -58,11 +57,21 @@ function buildScoreboard(room) {
   }));
 }
 
+function getTiedPlayers(room) {
+  if (room.standings.length < 2) return [];
+  const topScore = room.standings[0].score;
+  const bottomScore = room.standings[room.standings.length - 1].score;
+  const topTied = room.standings.filter(p => p.score === topScore);
+  const bottomTied = room.standings.filter(p => p.score === bottomScore);
+  if (topTied.length > 1 && topTied.length < room.players.length) return topTied;
+  if (bottomTied.length > 1 && topTied.length === 1) return bottomTied;
+  return [];
+}
+
 function processReveal(room) {
   const prompt = room.currentPrompt;
   const subs = room.submissions || [];
 
-  // Normalize + fuzzy group submissions
   const groups = [];
   const assigned = new Set();
 
@@ -80,15 +89,13 @@ function processReveal(room) {
     groups.push(group);
   }
 
-  // Score
   for (const group of groups) {
     const size = group.length;
     let pts = 0;
     if (size >= 3) pts = 15;
-    else if (size === 2) pts = 5;
-    else if (size === 1) pts = 10;
+    else if (size === 2) pts = 10;
+    else if (size === 1) pts = 3;
 
-    // Check if they just repeated the prompt word
     for (const sub of group) {
       const isPromptRepeat = fuzzyMatch(sub.word, prompt);
       const finalPts = isPromptRepeat ? 0 : pts;
@@ -112,9 +119,19 @@ function processReveal(room) {
 function nextRound(room) {
   room.currentRound++;
   if (room.currentRound > TOTAL_ROUNDS) {
-    room.status = 'results';
     buildScoreboard(room);
     clearTimer(room);
+    if (!room._tiebreakerDone) {
+      const tied = getTiedPlayers(room);
+      if (tied.length > 0) {
+        room.tiebreakerPlayers = tied.map(p => p.id);
+        room.status = 'tiebreaker_ready';
+        broadcastRoomState(room);
+        return;
+      }
+    }
+    room._tiebreakerDone = false;
+    room.status = 'results';
     broadcastRoomState(room);
     return;
   }
@@ -135,8 +152,6 @@ function nextRound(room) {
   });
 }
 
-// ─── Event Handlers ───
-
 export function handleCreateRoom(socket, nickname) {
   const ip = socket.handshake.address;
   if (!checkRateLimit(`create:${ip}`, 5, 60000)) {
@@ -152,7 +167,8 @@ export function handleCreateRoom(socket, nickname) {
     code, status: 'lobby', players: [player], chats: [],
     currentRound: 0, currentPrompt: null, usedWords: [],
     submissions: [], revealGroups: [], standings: [], phaseTimer: 0, _timer: null,
-    spectators: [], settings: { maxPlayers: 10 }
+    spectators: [], settings: { maxPlayers: 10 },
+    tiebreakerPlayers: [], _tiebreakerDone: false,
   };
   rooms.set(code, room);
   socket.join(code);
@@ -206,6 +222,8 @@ export function handleStartGame(socketId) {
   room.revealGroups = [];
   room.standings = [];
   room.chats = [];
+  room.tiebreakerPlayers = [];
+  room._tiebreakerDone = false;
 
   nextRound(room);
 }
@@ -213,6 +231,7 @@ export function handleStartGame(socketId) {
 export function handleSubmitWord(socketId, { word }) {
   const room = findPlayerRoom(socketId);
   if (!room || room.status !== 'word_drop') return;
+  if (room._isTiebreaker && room.tiebreakerPlayers.length > 0 && !room.tiebreakerPlayers.includes(socketId)) return;
   const cleaned = stripHtml(word || '').slice(0, 30).trim();
   if (!cleaned) return;
   const already = room.submissions.find(s => s.playerId === socketId);
@@ -221,6 +240,24 @@ export function handleSubmitWord(socketId, { word }) {
   if (!player) return;
   room.submissions.push({ playerId: socketId, playerName: player.name, word: cleaned });
   broadcastRoomState(room);
+}
+
+export function handleStartTiebreaker(socketId) {
+  const room = findPlayerRoom(socketId);
+  if (!room || room.status !== 'tiebreaker_ready') return;
+  const host = room.players.find(p => p.id === socketId && p.isHost);
+  if (!host) return;
+
+  room._isTiebreaker = true;
+  room._tiebreakerDone = true;
+  room.currentRound = TOTAL_ROUNDS;
+  room.players.forEach(p => {
+    if (room.tiebreakerPlayers.includes(p.id)) { p.score = 0; }
+  });
+  room.usedWords = [];
+  room.submissions = [];
+  room.revealGroups = [];
+  nextRound(room);
 }
 
 export function handleSendChat(socketId, { message }) {
@@ -266,6 +303,9 @@ export function handlePlayAgain(socketId) {
   room.revealGroups = [];
   room.standings = [];
   room.chats = [];
+  room.tiebreakerPlayers = [];
+  room._isTiebreaker = false;
+  room._tiebreakerDone = false;
   broadcastRoomState(room);
 }
 

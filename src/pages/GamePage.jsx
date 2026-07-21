@@ -21,7 +21,7 @@ function GamePage({ onOpenRules }) {
   const store = useGameStore();
   const { roomCode, playerId, status, phaseTimer = 0, isConnected,
     players = [], chats = [], currentPrompt, currentRound, totalRounds = 8,
-    revealGroups = [], standings = [], mySubmission } = store;
+    revealGroups = [], standings = [], mySubmission, tiebreakerPlayers = [] } = store;
 
   const uiStore = useUIStore();
   const { errorMsg, showChatPanel, mobileChatOpen } = uiStore;
@@ -60,6 +60,7 @@ function GamePage({ onOpenRules }) {
     if (window.confirm('Skip to next phase?')) emit('host_next_phase');
   };
   const handlePlayAgain = () => emit('play_again');
+  const handleStartTiebreaker = () => emit('start_tiebreaker');
 
   const handleSendChat = (e) => {
     e.preventDefault();
@@ -127,7 +128,7 @@ function GamePage({ onOpenRules }) {
 
       <header style={{ padding: isMobile ? '10px 12px' : '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 10, background: 'rgba(10, 13, 15, 0.6)', gap: '6px', flexShrink: 0 }}>
         <h2 style={{ fontSize: isMobile ? '0.7rem' : '0.85rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.08em', color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-          {status === 'word_drop' ? `ROUND ${currentRound} — ASSOCIATE` : status === 'reveal' ? 'RESULTS' : status === 'results' ? 'FINAL STANDINGS' : 'LINKED'}
+          {status === 'word_drop' && `ROUND ${currentRound} — ${tiebreakerPlayers.length > 0 ? 'TIEBREAKER' : 'ASSOCIATE'}`}{status === 'reveal' && 'RESULTS'}{status === 'results' && 'FINAL STANDINGS'}{status === 'tiebreaker_ready' && 'TIEBREAKER READY'}
         </h2>
 
         <div className="flex-row" style={{ gap: isMobile ? '6px' : '10px', flexShrink: 0 }}>
@@ -169,6 +170,23 @@ function GamePage({ onOpenRules }) {
           )}
           {status === 'results' && (
             <LinkedResults players={players} standings={standings} totalRounds={totalRounds} playerId={playerId} isHost={isHost} onPlayAgain={handlePlayAgain} />
+          )}
+          {status === 'tiebreaker_ready' && (
+            <div className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '20px', padding: isMobile ? '16px' : '28px', textAlign: 'center' }}>
+              <h2 className="font-display" style={{ fontSize: isMobile ? '2rem' : '3rem', fontWeight: '400', color: '#ffffff', margin: 0 }}>Tiebreaker!</h2>
+              <p style={{ color: 'var(--text-secondary)', fontSize: isMobile ? '0.8rem' : '0.9rem', maxWidth: '400px', lineHeight: '1.5' }}>
+                <strong style={{ color: '#ffffff' }}>{tiebreakerPlayers.map(id => players.find(p => p.id === id)?.name).join(', ')}</strong> {tiebreakerPlayers.length === 1 ? 'is' : 'are'} tied.
+                One sudden-death round decides who prevails.
+              </p>
+              {isHost && (
+                <button onClick={handleStartTiebreaker} className="btn-primary" style={{ padding: '12px 28px', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                  Start Tiebreaker
+                </button>
+              )}
+              {!isHost && (
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>Waiting for host to start tiebreaker...</p>
+              )}
+            </div>
           )}
         </main>
         {showChatPanel && !isMobile && (

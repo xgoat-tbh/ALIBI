@@ -43,9 +43,11 @@ export function RulesModal({ onClose }) {
         </h3>
         <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', lineHeight: '1.6', marginBottom: '16px' }}>
           <span style={{ color: 'var(--color-match)' }}>HIVE MIND (3+ match)</span>: +15 each — great minds think alike.<br />
-          <span style={{ color: 'var(--color-warning)' }}>PAIR (2 match)</span>: +5 each — you found your twin.<br />
-          <span style={{ color: 'var(--color-unique)' }}>LONE WOLF (no match)</span>: +10 — you're on another wavelength.<br />
-          <span style={{ color: 'var(--color-danger)' }}>REPEATING THE PROMPT</span>: 0 points — boring!
+          <span style={{ color: 'var(--color-warning)' }}>PAIR (2 match)</span>: +10 each — you found your twin.<br />
+          <span style={{ color: 'var(--color-unique)' }}>LONE WOLF (no match)</span>: +3 — better luck next time.<br />
+          <span style={{ color: 'var(--color-danger)' }}>REPEATING THE PROMPT</span>: 0 points — boring!<br /><br />
+          <strong>Strategy:</strong> Matching gives the most points. Think about what others will say.<br /><br />
+          <strong>Tiebreaker:</strong> If two or more players tie for 1st or last place, a sudden-death round decides who takes the crown (or the skull).
         </div>
 
         <h3 style={{ fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: '8px', color: 'var(--color-success)' }}>Winner / Loser</h3>

@@ -1,39 +1,58 @@
 import React from 'react';
-import { Crown, Skull, Trophy, RotateCcw } from 'lucide-react';
+import { Crown, Skull, Trophy, RotateCcw, Swords } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function LinkedResults({ players = [], standings = [], totalRounds, playerId, isHost, onPlayAgain }) {
+function LinkedResults({ players = [], standings = [], totalRounds, playerId, isHost, onPlayAgain, onStartTiebreaker }) {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const sorted = standings.length > 0 ? standings : [...players].sort((a, b) => b.score - a.score);
   const winner = sorted[0];
   const loser = sorted[sorted.length - 1];
+  const topScore = sorted[0]?.score;
+  const topTied = standings.filter(p => p.score === topScore);
+  const hasTie = topTied.length > 1;
 
   return (
     <div className="animate-fade-in" style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: isMobile ? '16px' : '28px', gap: isMobile ? '16px' : '24px' }}>
-      {/* Winner */}
       <div style={{ textAlign: 'center' }}>
         <span style={{ fontSize: isMobile ? '0.6rem' : '0.7rem', fontWeight: '700', letterSpacing: '0.15em', textTransform: 'uppercase', color: 'var(--text-muted)' }}>
           Game Over — {totalRounds} Rounds
         </span>
       </div>
 
-      <div style={{
-        padding: isMobile ? '20px 24px' : '28px 40px',
-        background: 'rgba(255, 210, 63, 0.06)',
-        border: '1px solid rgba(255, 210, 63, 0.2)',
-        borderRadius: '12px',
-        textAlign: 'center'
-      }}>
-        <Crown size={isMobile ? 28 : 36} style={{ color: 'var(--color-warning)' }} />
-        <h2 className="font-display" style={{ fontSize: isMobile ? '1.6rem' : '2.5rem', fontWeight: '400', color: '#ffffff', margin: '4px 0' }}>
-          {winner?.name}
-        </h2>
-        <p style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', color: 'var(--text-secondary)' }}>
-          {winner?.score} points — <strong style={{ color: 'var(--color-warning)' }}>Crowned</strong>
-        </p>
-      </div>
+      {!hasTie ? (
+        <div style={{
+          padding: isMobile ? '20px 24px' : '28px 40px',
+          background: 'rgba(255, 210, 63, 0.06)',
+          border: '1px solid rgba(255, 210, 63, 0.2)',
+          borderRadius: '12px',
+          textAlign: 'center'
+        }}>
+          <Crown size={isMobile ? 28 : 36} style={{ color: 'var(--color-warning)' }} />
+          <h2 className="font-display" style={{ fontSize: isMobile ? '1.6rem' : '2.5rem', fontWeight: '400', color: '#ffffff', margin: '4px 0' }}>
+            {winner?.name}
+          </h2>
+          <p style={{ fontSize: isMobile ? '0.75rem' : '0.85rem', color: 'var(--text-secondary)' }}>
+            {winner?.score} points — <strong style={{ color: 'var(--color-warning)' }}>Crowned</strong>
+          </p>
+        </div>
+      ) : (
+        <div style={{
+          padding: isMobile ? '16px 20px' : '20px 32px',
+          background: 'rgba(255, 210, 63, 0.06)',
+          border: '1px solid rgba(255, 210, 63, 0.2)',
+          borderRadius: '12px',
+          textAlign: 'center'
+        }}>
+          <Swords size={isMobile ? 24 : 32} style={{ color: 'var(--color-warning)' }} />
+          <p style={{ fontSize: isMobile ? '0.8rem' : '0.9rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            <strong style={{ color: '#ffffff' }}>{topTied.map(p => p.name).join(', ')}</strong> are tied at {topScore} points
+          </p>
+          <p style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', color: 'var(--text-muted)', marginTop: '4px' }}>
+            A tiebreaker round will decide the winner.
+          </p>
+        </div>
+      )}
 
-      {/* Loser shame */}
       <div style={{
         padding: isMobile ? '10px 16px' : '12px 20px',
         background: 'rgba(255, 94, 91, 0.06)',
@@ -47,7 +66,6 @@ function LinkedResults({ players = [], standings = [], totalRounds, playerId, is
         </span>
       </div>
 
-      {/* Scoreboard */}
       <div style={{ width: '100%', maxWidth: '400px' }}>
         <h3 style={{ fontSize: '0.7rem', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--text-secondary)', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
           <Trophy size={14} style={{ color: 'var(--accent-primary)' }} />
@@ -75,7 +93,7 @@ function LinkedResults({ players = [], standings = [], totalRounds, playerId, is
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                   <span className="font-tech" style={{ fontSize: '0.8rem', fontWeight: '700', color: '#ffffff' }}>{p.score}</span>
-                  {i === 0 && <Crown size={12} style={{ color: 'var(--color-warning)' }} />}
+                  {i === 0 && !hasTie && <Crown size={12} style={{ color: 'var(--color-warning)' }} />}
                   {i === sorted.length - 1 && sorted.length > 2 && <Skull size={12} style={{ color: 'var(--color-danger)' }} />}
                 </div>
               </div>
