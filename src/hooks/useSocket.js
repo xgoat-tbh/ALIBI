@@ -13,6 +13,8 @@ export function useSocket(SOCKET_URL) {
     const gs = useGameStore.getState;
     const us = useUIStore.getState;
 
+    gs().setSocket(socket);
+
     socket.on('connect', () => {
       gs().setConnected(true);
       us().setError('');
@@ -33,6 +35,7 @@ export function useSocket(SOCKET_URL) {
     return () => {
       socket.disconnect();
       socketRef.current = null;
+      useGameStore.getState().setSocket(null);
     };
   }, [SOCKET_URL]);
 
