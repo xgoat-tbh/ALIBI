@@ -12,7 +12,7 @@ import Recap from './components/Recap';
 import { Volume2, VolumeX, ShieldAlert, Award, MessageSquare, AlertCircle, Copy, Check, X, MessageCircle } from 'lucide-react';
 // sound effects removed for debugging
 
-const SOCKET_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001' : window.location.origin;
+const SOCKET_URL = window.location.hostname === 'localhost' ? 'http://localhost:3001' : (import.meta.env.VITE_SOCKET_URL || window.location.origin);
 
 function useMediaQuery(query) {
   const [matches, setMatches] = useState(() => window.matchMedia(query).matches);
@@ -41,10 +41,13 @@ function App() {
 
   // Initialize socket connection
   useEffect(() => {
-    const newSocket = io(SOCKET_URL);
+    const newSocket = io(SOCKET_URL, { timeout: 45000 });
     store.setSocket(newSocket);
 
-    newSocket.on('connect', () => store.setConnected(true));
+    newSocket.on('connect', () => {
+      store.setConnected(true);
+      store.setError('');
+    });
     newSocket.on('disconnect', () => store.setConnected(false));
     newSocket.on('connect_error', () => store.setError('Connection failed. Retrying...'));
 
