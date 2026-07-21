@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
@@ -13,10 +13,11 @@ import ConfidenceLock from '../components/ConfidenceLock';
 import TruthReveal from '../components/TruthReveal';
 import Recap from '../components/Recap';
 import { ChatSidebar } from '../components/ChatSidebar';
-import { Volume2, VolumeX, ShieldAlert, MessageSquare, AlertCircle, Wifi, WifiOff, Copy, Check, MessageCircle } from 'lucide-react';
+import { Volume2, VolumeX, ShieldAlert, MessageSquare, AlertCircle, Wifi, WifiOff, Copy, Check, MessageCircle, LogOut } from 'lucide-react';
 
 function GamePage({ onOpenRules }) {
   const { code } = useParams();
+  const navigate = useNavigate();
   const isMobile = useMediaQuery('(max-width: 768px)');
   const chatEndRef = useRef(null);
   const [chatInput, setChatInput] = useState('');
@@ -70,7 +71,7 @@ function GamePage({ onOpenRules }) {
   };
 
   const handleStartGame = (themeId) => emit('start_game', { themeId });
-  const handleToggleReady = () => { playReady(); emit('toggle_ready'); };
+  const handleToggleReady = () => { if (!uiStore.isMuted) playReady(); emit('toggle_ready'); };
 
   const handlePlaceCard = (fact, category, because) => emit('place_card', { fact, category, because });
   const handleRemoveCard = (boardItemId) => emit('remove_card', { boardItemId });
@@ -78,7 +79,7 @@ function GamePage({ onOpenRules }) {
   const handleRespondChallenge = (boardItemId, explanation) => emit('respond_challenge', { boardItemId, explanation });
   const handleObjection = () => emit('trigger_objection');
   const handleUpdateReconstruction = (recon) => emit('update_reconstruction', { reconstruction: recon });
-  const handleLockConfidence = (fact, stake) => { playLockIn(); emit('lock_confidence', { fact, stake }); };
+  const handleLockConfidence = (fact, stake) => { if (!uiStore.isMuted) playLockIn(); emit('lock_confidence', { fact, stake }); };
   const handleHostNextPhase = () => {
     if (window.confirm('Skip to the next phase?')) emit('host_next_phase');
   };
@@ -87,7 +88,7 @@ function GamePage({ onOpenRules }) {
   const handleSendChat = (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
-    playChat();
+    if (!uiStore.isMuted) playChat();
     emit('send_chat', { message: chatInput });
     setChatInput('');
   };
@@ -104,6 +105,17 @@ function GamePage({ onOpenRules }) {
     });
     uiStore.setCopied(true);
     setTimeout(() => uiStore.setCopied(false), 2000);
+  };
+
+  const handleLeaveRoom = () => {
+    if (window.confirm('Leave this case room?')) {
+      emit('leave_room');
+      navigate('/', { replace: true });
+    }
+  };
+
+  const handleToggleMute = () => {
+    uiStore.setMuted(!uiStore.isMuted);
   };
 
   const isHost = players.find(p => p.id === playerId)?.isHost ?? false;
@@ -133,7 +145,7 @@ function GamePage({ onOpenRules }) {
   // ─── Direct URL access: not yet in this room ───
   if (code && roomCode !== code && status === 'lobby') {
     return (
-      <div className="animate-fade-in" style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
+      <div className="animate-fade-in" style={{ height: '100dvh', width: '100vw', overflow: 'hidden', position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px' }}>
         <div className="surface-raised" style={{ maxWidth: '400px', width: '100%', padding: '28px', textAlign: 'center', backgroundColor: 'var(--bg-surface)' }}>
           <h2 style={{ fontSize: '1.2rem', fontWeight: '700', marginBottom: '8px', letterSpacing: '0.05em' }}>Join Room</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
@@ -157,6 +169,13 @@ function GamePage({ onOpenRules }) {
               Enter Room
             </button>
           </form>
+          <button
+            onClick={() => navigate('/', { replace: true })}
+            className="btn-secondary"
+            style={{ width: '100%', marginTop: '10px', padding: '8px 14px', fontSize: '0.75rem', color: 'var(--text-muted)' }}
+          >
+            Back to Lobby
+          </button>
         </div>
       </div>
     );
@@ -181,6 +200,7 @@ function GamePage({ onOpenRules }) {
           onJoinRoom={handleJoinRoom}
           onStartGame={handleStartGame}
           onToggleReady={handleToggleReady}
+          onLeaveRoom={handleLeaveRoom}
         />
       </div>
     );
@@ -318,6 +338,25 @@ function GamePage({ onOpenRules }) {
               Skip
             </button>
           )}
+
+          <button
+            onClick={handleToggleMute}
+            className="btn-secondary"
+            style={{ padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
+            aria-label={uiStore.isMuted ? 'Unmute sounds' : 'Mute sounds'}
+          >
+            {uiStore.isMuted ? <VolumeX size={12} /> : <Volume2 size={12} />}
+          </button>
+
+          <button
+            onClick={handleLeaveRoom}
+            className="btn-secondary"
+            style={{ padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-danger)' }}
+            aria-label="Leave room"
+          >
+            {!isMobile && <span>Leave</span>}
+            <LogOut size={12} />
+          </button>
         </div>
       </header>
 

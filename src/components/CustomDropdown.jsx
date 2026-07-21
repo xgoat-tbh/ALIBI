@@ -147,8 +147,9 @@ function CustomDropdown({ options, value, onChange, label }) {
         >
           <div
             style={{
-              maxHeight: '200px',
-              overflowY: 'auto'
+              maxHeight: 'min(200px, 40vh)',
+              overflowY: 'auto',
+              WebkitOverflowScrolling: 'touch'
             }}
           >
             {options.map((opt, idx) => {

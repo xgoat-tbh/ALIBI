@@ -6,6 +6,14 @@ import {
   playTimerTick, playObjection, playLockIn, playError, playChat
 } from './useSound';
 
+function isMuted() {
+  return useUIStore.getState().isMuted;
+}
+
+function playIf(playFn) {
+  if (!isMuted()) playFn();
+}
+
 export function useSoundEffects() {
   const prevPlayersLen = useRef(0);
   const prevStatus = useRef(null);
@@ -17,31 +25,31 @@ export function useSoundEffects() {
 
   useEffect(() => {
     const unsub = useGameStore.subscribe((state) => {
-      const { status, players, phaseTimer, objection, lockedPlayerIds, privateHand } = state;
+      const { status, players, phaseTimer, objection, lockedPlayerIds } = state;
 
       if (status !== prevStatus.current && prevStatus.current !== null) {
-        if (status === 'case_open') playGameStart();
-        else if (status !== 'lobby') playPhaseChange();
+        if (status === 'case_open') playIf(playGameStart);
+        else if (status !== 'lobby') playIf(playPhaseChange);
       }
       prevStatus.current = status;
 
-      if (players.length > prevPlayersLen.current && prevPlayersLen.current > 0) playJoin();
-      if (players.length < prevPlayersLen.current) playLeave();
+      if (players.length > prevPlayersLen.current && prevPlayersLen.current > 0) playIf(playJoin);
+      if (players.length < prevPlayersLen.current) playIf(playLeave);
       prevPlayersLen.current = players.length;
 
-      if (phaseTimer > 0 && phaseTimer <= 5 && prevTimer.current > 5) playTimerTick();
+      if (phaseTimer > 0 && phaseTimer <= 5 && prevTimer.current > 5) playIf(playTimerTick);
       prevTimer.current = phaseTimer;
 
-      if (objection?.active && !prevObjectionActive.current) playObjection();
+      if (objection?.active && !prevObjectionActive.current) playIf(playObjection);
       prevObjectionActive.current = !!objection?.active;
 
       const lockCount = lockedPlayerIds.size;
-      if (lockCount > prevLockedCount.current) playLockIn();
+      if (lockCount > prevLockedCount.current) playIf(playLockIn);
       prevLockedCount.current = lockCount;
     });
 
     const unsubUi = useUIStore.subscribe((state) => {
-      if (state.errorMsg && state.errorMsg !== prevErrorMsg.current) playError();
+      if (state.errorMsg && state.errorMsg !== prevErrorMsg.current) playIf(playError);
       prevErrorMsg.current = state.errorMsg;
     });
 
@@ -50,7 +58,7 @@ export function useSoundEffects() {
 
   useEffect(() => {
     const unsub = useGameStore.subscribe((state) => {
-      if (state.chats.length > prevChatsLen.current) playChat();
+      if (state.chats.length > prevChatsLen.current) playIf(playChat);
       prevChatsLen.current = state.chats.length;
     });
     return unsub;

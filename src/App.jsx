@@ -25,6 +25,7 @@ function App() {
 
   return (
     <>
+      <div id="bg-layer" aria-hidden="true" />
       <Routes>
         <Route path="/" element={<LandingPage onOpenRules={() => setShowRules(true)} />} />
         <Route path="/room/:code" element={<GamePage onOpenRules={() => setShowRules(true)} />} />

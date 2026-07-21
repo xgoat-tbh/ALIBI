@@ -23,16 +23,16 @@ function LandingPage({ onOpenRules }) {
   };
 
   return (
-    <div className="animate-fade-in" style={{ height: '100vh', width: '100vw', overflow: 'hidden', position: 'relative' }}>
+    <div className="animate-fade-in" style={{ height: '100dvh', width: '100vw', overflow: 'hidden', position: 'relative' }}>
       <div className="landing-wrapper" style={{
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
-        padding: isMobile ? '20px' : '40px',
+        padding: isMobile ? '16px 14px' : '40px',
         maxWidth: isMobile ? '100%' : '820px',
         margin: '0 auto',
-        gap: isMobile ? '12px' : '20px'
+        gap: isMobile ? '10px' : '20px'
       }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
           <h1 className="font-display" style={{ fontSize: isMobile ? '3.5rem' : '5.5rem', fontWeight: '400', color: '#ffffff', letterSpacing: '0.02em', lineHeight: '1' }}>ALIBI</h1>

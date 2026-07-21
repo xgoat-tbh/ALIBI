@@ -63,11 +63,17 @@ body {
   font-family: var(--font-interface);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  background-color: var(--bg-base);
+}
+
+#bg-layer {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  z-index: -1;
   background-image: url('/bg.png');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  background-attachment: fixed;
 }
 
 * {
@@ -159,7 +165,9 @@ img, svg, canvas, video, iframe {
   gap: 0;
   display: flex;
   flex-direction: column;
-  background: rgba(7, 8, 10, 0.85);
+  background: rgba(7, 8, 10, 0.78);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
 }
 
 /* Buttons */
@@ -402,10 +410,6 @@ input[type="text"]:focus, select:focus, textarea:focus {
   html, body, #root {
     overflow-x: hidden !important;
     overflow-y: hidden !important;
-  }
-
-  body {
-    background-attachment: scroll;
   }
 
   .landing-wrapper {

@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Users, Copy, Check, Shield, ArrowRight } from 'lucide-react';
+import { Users, Copy, Check, Shield, ArrowRight, LogOut } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinRoom, onStartGame, onToggleReady }) {
+function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinRoom, onStartGame, onToggleReady, onLeaveRoom }) {
   const [selectedTheme, setSelectedTheme] = useState('random');
   const [copied, setCopied] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -191,6 +191,16 @@ function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinR
           </div>
         </div>
       )}
+
+      <button
+        onClick={onLeaveRoom}
+        className="btn-secondary"
+        style={{ width: '100%', padding: '8px 14px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', color: 'var(--text-muted)', marginTop: '4px' }}
+        aria-label="Leave room"
+      >
+        <LogOut size={12} />
+        <span>Leave Room</span>
+      </button>
     </div>
   );
 }
