@@ -12,7 +12,7 @@ import {
   handleCreateRoom, handleJoinRoom, handleToggleReady,
   handleStartGame, handleSubmitWord, handleSendChat,
   handleHostNextPhase, handlePlayAgain, handleLeaveRoom,
-  handleAddBots
+  handleKickPlayer, handleAddBots
 } from './linkedGame.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -67,6 +67,7 @@ io.on('connection', (socket) => {
   socket.on('play_again', () => handlePlayAgain(socket.id));
 
   socket.on('add_bots', ({ count }) => handleAddBots(socket.id, count));
+  socket.on('kick_player', ({ playerId }) => handleKickPlayer(socket.id, playerId));
 
   socket.on('disconnect', () => handleLeaveRoom(socket.id));
 });

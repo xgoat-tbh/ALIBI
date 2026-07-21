@@ -110,7 +110,8 @@ function GamePage({ onOpenRules }) {
         )}
         <Lobby roomCode={roomCode} players={players} playerId={playerId} isHost={isHost}
           onStartGame={handleStartGame} onToggleReady={handleToggleReady} onLeaveRoom={handleLeaveRoom}
-          onAddBots={(count) => emit('add_bots', { count })} />
+          onAddBots={(count) => emit('add_bots', { count })}
+          onKickPlayer={(playerId) => emit('kick_player', { playerId })} />
       </div>
     );
   }

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { Users, Copy, Check, LogOut, Bot, Crown } from 'lucide-react';
+import { Users, Copy, Check, LogOut, Bot, Crown, XCircle } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function Lobby({ roomCode, players = [], playerId, isHost, onStartGame, onToggleReady, onLeaveRoom, onAddBots }) {
+function Lobby({ roomCode, players = [], playerId, isHost, onStartGame, onToggleReady, onLeaveRoom, onAddBots, onKickPlayer }) {
   const [copied, setCopied] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
 
@@ -67,6 +67,11 @@ function Lobby({ roomCode, players = [], playerId, isHost, onStartGame, onToggle
                       <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: player.isReady ? 'var(--color-success)' : 'var(--text-muted)', display: 'inline-block' }}></span>
                       <span style={{ fontWeight: '500' }}>{player.isReady ? 'Ready' : 'Waiting'}</span>
                     </div>
+                  )}
+                  {isHost && !player.isBot && !player.isHost && (
+                    <button onClick={() => onKickPlayer?.(player.id)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', padding: '2px', display: 'flex' }} title={`Remove ${player.name}`} aria-label={`Kick ${player.name}`}>
+                      <XCircle size={14} />
+                    </button>
                   )}
                 </div>
               </div>

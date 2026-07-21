@@ -269,6 +269,20 @@ export function handlePlayAgain(socketId) {
   broadcastRoomState(room);
 }
 
+export function handleKickPlayer(socketId, targetId) {
+  const room = findPlayerRoom(socketId);
+  if (!room || room.status !== 'lobby') return;
+  const host = room.players.find(p => p.id === socketId && p.isHost);
+  if (!host) return;
+  if (targetId === socketId) return;
+  const pIndex = room.players.findIndex(p => p.id === targetId);
+  if (pIndex === -1) return;
+  room.players.splice(pIndex, 1);
+  getIO().to(targetId).emit('room_cleared');
+  getIO().sockets.sockets.get(targetId)?.leave(room.code);
+  broadcastRoomState(room);
+}
+
 export function handleLeaveRoom(socketId) {
   const room = findPlayerRoom(socketId);
   if (!room) return;
