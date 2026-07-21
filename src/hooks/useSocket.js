@@ -28,6 +28,7 @@ export function useSocket(SOCKET_URL) {
     socket.on('joined_successfully', ({ roomCode, playerId, players }) => gs().setJoined(roomCode, playerId, players));
     socket.on('room_updated', (data) => gs().setRoomUpdated(data));
     socket.on('private_hand', ({ hand }) => gs().setPrivateHand(hand));
+    socket.on('saboteur_assigned', () => gs().setSaboteur(true));
     socket.on('game_error', ({ message }) => {
       us().setError(message);
       setTimeout(() => us().setError(''), 5000);

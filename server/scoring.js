@@ -9,7 +9,6 @@ function matchCategory(input, truth) {
   if (!a || !b) return false;
   if (a === b) return true;
   if (a.includes(b) || b.includes(a)) return true;
-  // One-word match: if either side is a single word, check if the other contains it
   const aWords = a.split(' ');
   const bWords = b.split(' ');
   if (aWords.length === 1 && bWords.includes(aWords[0])) return true;
@@ -32,7 +31,7 @@ export function calculateScoring(room) {
   room.trustPoints = correctCategories * 20;
 
   const totalLocked = room.players.filter(p => p.currentLock !== null).length;
-  const incorrectCount = room.players.filter(p => p.currentLock && !p.currentLock.isCorrect).length;
+  const incorrectCount = room.players.filter(p => p.currentLock && !p.currentLock.isCorrect && !p.isSaboteur).length;
 
   const highlights = [];
 
@@ -41,21 +40,33 @@ export function calculateScoring(room) {
     const isCorrect = player.currentLock ? player.currentLock.isCorrect : false;
 
     if (player.currentLock && player.currentStake) {
-      if (isCorrect) {
-        if (player.currentStake === 'Hunch') delta += 10;
-        if (player.currentStake === 'Confident') delta += 25;
-        if (player.currentStake === 'Certain') delta += 50;
-        if (totalLocked > 1 && (incorrectCount / totalLocked) > 0.5) {
-          delta += 20;
-          player.minorityReportTriggered = true;
+      const stakeValues = { Hunch: { win: 10, lose: 0 }, Confident: { win: 25, lose: -10 }, Certain: { win: 50, lose: -25 } };
+      const s = stakeValues[player.currentStake] || { win: 0, lose: 0 };
+
+      if (player.isSaboteur) {
+        // Saboteur: rewarded for being WRONG, penalized for being RIGHT
+        if (!isCorrect) {
+          delta += s.win;
+          // Saboteur gets bonus for each wrong reconstruction category
+          delta += (5 - correctCategories) * 5;
         } else {
+          delta += s.lose;
+        }
+        player.minorityReportTriggered = false;
+      } else {
+        // Normal scoring
+        if (isCorrect) {
+          delta += s.win;
+          if (totalLocked > 1 && (incorrectCount / totalLocked) > 0.5) {
+            delta += 20;
+            player.minorityReportTriggered = true;
+          } else {
+            player.minorityReportTriggered = false;
+          }
+        } else {
+          delta += s.lose;
           player.minorityReportTriggered = false;
         }
-      } else {
-        if (player.currentStake === 'Hunch') delta += 0;
-        if (player.currentStake === 'Confident') delta -= 10;
-        if (player.currentStake === 'Certain') delta -= 25;
-        player.minorityReportTriggered = false;
       }
     }
 
@@ -63,26 +74,42 @@ export function calculateScoring(room) {
     player.score += delta;
 
     let ratingDelta = 0;
-    if (player.currentStake === 'Certain') ratingDelta = isCorrect ? +15 : -25;
-    else if (player.currentStake === 'Confident') ratingDelta = isCorrect ? +8 : -10;
-    else if (player.currentStake === 'Hunch') ratingDelta = isCorrect ? +3 : 0;
+    if (player.isSaboteur) {
+      if (player.currentStake === 'Certain') ratingDelta = !isCorrect ? +20 : -30;
+      else if (player.currentStake === 'Confident') ratingDelta = !isCorrect ? +10 : -15;
+      else if (player.currentStake === 'Hunch') ratingDelta = !isCorrect ? +5 : 0;
+    } else {
+      if (player.currentStake === 'Certain') ratingDelta = isCorrect ? +15 : -25;
+      else if (player.currentStake === 'Confident') ratingDelta = isCorrect ? +8 : -10;
+      else if (player.currentStake === 'Hunch') ratingDelta = isCorrect ? +3 : 0;
+    }
     player.detectiveRating = Math.max(500, (player.detectiveRating || 1000) + ratingDelta);
   });
 
+  // Build highlights
   const confidentWrong = room.players.find(p => p.currentStake === 'Certain' && p.currentLock && !p.currentLock.isCorrect);
-  if (confidentWrong) {
+  if (confidentWrong && !confidentWrong.isSaboteur) {
     highlights.push({ type: 'blunder', text: `${confidentWrong.name} was absolutely Certain of their memory... but it was completely fabricated!` });
   }
   const hero = room.players.find(p => p.minorityReportTriggered);
   if (hero) {
-    highlights.push({ type: 'hero', text: `${hero.name} was the lone voice of reason, standing by a memory that the rest of the table doubted!` });
+    highlights.push({ type: 'hero', text: `${hero.name} was the lone voice of reason, standing by a memory the rest of the table doubted!` });
   }
   const allCorrect = room.players.length > 0 && room.players.every(p => p.currentLock && p.currentLock.isCorrect);
   if (allCorrect) {
-    highlights.push({ type: 'synergy', text: 'The table shares a singular consciousness: Every single detective locked in a correct memory!' });
+    highlights.push({ type: 'synergy', text: 'Every detective locked in a correct memory. The table shares a singular consciousness!' });
+  }
+  const saboteur = room.players.find(p => p.isSaboteur);
+  if (saboteur) {
+    const saboteurScore = saboteur.lastScoreDelta || 0;
+    if (saboteurScore > 0) {
+      highlights.push({ type: 'traitor', text: `${saboteur.name} was the SABOTEUR — they sabotaged the investigation from within and profited ${saboteurScore > 0 ? '+' : ''}${saboteurScore} points!` });
+    } else {
+      highlights.push({ type: 'traitor_caught', text: `${saboteur.name} was the SABOTEUR, but the team saw through their deception!` });
+    }
   }
   if (highlights.length === 0) {
-    highlights.push({ type: 'info', text: `Investigation complete. The team achieved a ${room.trustPoints}% reconstruction accuracy.` });
+    highlights.push({ type: 'info', text: `Investigation complete. The team achieved ${room.trustPoints}% reconstruction accuracy.` });
   }
   room.highlights = highlights;
 }

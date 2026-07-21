@@ -44,15 +44,15 @@ export function transitionToPhase(room, newPhase) {
 
   let duration = 0;
   switch (newPhase) {
-    case 'case_open': duration = 12; break;
-    case 'private_memory': duration = 30; break;
-    case 'opening_statements': room.testimonySpeakerIdx = 0; duration = 20; break;
-    case 'cross_talk': duration = 90; break;
-    case 'investigation': duration = 180; break;
-    case 'confidence_lock': duration = 25; break;
-    case 'final_reconstruction': duration = 60; break;
-    case 'reveal': duration = 25; break;
-    case 'recap': duration = 0; calculateScoring(room); break;
+    case 'case_open': duration = 8; break;
+    case 'private_memory': duration = 15; break;
+    case 'opening_statements': room.testimonySpeakerIdx = 0; duration = 10; break;
+    case 'cross_talk': duration = 45; break;
+    case 'investigation': duration = 90; break;
+    case 'confidence_lock': duration = 20; break;
+    case 'final_reconstruction': duration = 45; break;
+    case 'reveal': duration = 20; calculateScoring(room); break;
+    case 'recap': duration = 0; break;
   }
 
   broadcastRoomState(room);

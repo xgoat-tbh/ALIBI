@@ -13,7 +13,7 @@ import ConfidenceLock from '../components/ConfidenceLock';
 import TruthReveal from '../components/TruthReveal';
 import Recap from '../components/Recap';
 import { ChatSidebar } from '../components/ChatSidebar';
-import { Volume2, VolumeX, ShieldAlert, MessageSquare, AlertCircle, Wifi, WifiOff, Copy, Check, MessageCircle, LogOut } from 'lucide-react';
+import { Volume2, VolumeX, ShieldAlert, MessageSquare, AlertCircle, Wifi, WifiOff, Copy, Check, MessageCircle, LogOut, Skull, Eye, EyeOff } from 'lucide-react';
 
 function GamePage({ onOpenRules }) {
   const { code } = useParams();
@@ -28,7 +28,7 @@ function GamePage({ onOpenRules }) {
     roomCode, playerId, playerName, status, phaseTimer = 0, isConnected,
     players = [], board = [], caseData, reconstruction, objection,
     testimonySpeakerIdx, lockedPlayerIds = new Set(), chats = [], privateHand = [],
-    highlights = [], trustPoints = 0
+    highlights = [], trustPoints = 0, isSaboteur
   } = store;
 
   const uiStore = useUIStore();
@@ -452,7 +452,26 @@ function GamePage({ onOpenRules }) {
             )}
           </div>
 
-          {/* Quick Memory Hand Dock */}
+          {/* Saboteur Mission Panel */}
+          {isSaboteur && status !== 'lobby' && status !== 'reveal' && status !== 'recap' && (
+            <div style={{
+              padding: '10px 14px', marginBottom: '12px',
+              background: 'rgba(220, 38, 38, 0.08)',
+              border: '1px solid rgba(220, 38, 38, 0.2)',
+              borderRadius: '6px',
+              display: 'flex', alignItems: 'center', gap: '10px'
+            }}>
+              <Skull size={16} style={{ color: 'var(--color-danger)', flexShrink: 0 }} />
+              <div style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', color: 'var(--color-danger)' }}>
+                <strong style={{ textTransform: 'uppercase' }}>Saboteur Mission</strong>
+                <p style={{ fontSize: isMobile ? '0.65rem' : '0.75rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
+                  Lead the group to the WRONG conclusion. You are rewarded when the reconstruction is incorrect.
+                </p>
+              </div>
+            </div>
+          )}
+
+      {/* Quick Memory Hand Dock */}
           {status !== 'lobby' && status !== 'case_open' && status !== 'private_memory' && status !== 'reveal' && status !== 'recap' && privateHand.length > 0 && (
             <div style={{ padding: isMobile ? '10px 12px' : '16px 20px', marginTop: isMobile ? '12px' : '24px', background: 'rgba(7, 8, 10, 0.4)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '8px' }}>
@@ -539,26 +558,41 @@ function GamePage({ onOpenRules }) {
             const isMe = p.id === playerId;
             const isSpeaker = status === 'opening_statements' && currentSpeaker?.id === p.id;
             const hasLocked = lockedPlayerIds.has(p.id);
-            return (
-              <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '3px' : '6px', backgroundColor: isSpeaker ? 'rgba(124, 58, 237, 0.08)' : 'transparent', border: isSpeaker ? '1px solid rgba(124, 58, 237, 0.2)' : '1px solid transparent', padding: isMobile ? '2px 6px' : '4px 10px', borderRadius: 'var(--radius-button)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  {status === 'private_memory' || (status === 'opening_statements' && !isSpeaker) ? (
-                    <VolumeX size={isMobile ? 10 : 12} style={{ color: 'var(--text-muted)' }} />
+              const isSaboteurPlayer = p.isSaboteur;
+              const showStake = p.currentStake && (status === 'reveal' || status === 'recap' || (status === 'confidence_lock' && !isMobile));
+              return (
+                <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: isMobile ? '3px' : '6px', backgroundColor: isSpeaker ? 'rgba(124, 58, 237, 0.08)' : 'transparent', border: isSpeaker ? '1px solid rgba(124, 58, 237, 0.2)' : '1px solid transparent', padding: isMobile ? '2px 6px' : '4px 10px', borderRadius: 'var(--radius-button)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                  {isSaboteurPlayer && (status === 'reveal' || status === 'recap') ? (
+                    <Skull size={isMobile ? 10 : 12} style={{ color: 'var(--color-danger)' }} />
                   ) : (
-                    <Volume2 size={isMobile ? 10 : 12} style={{ color: 'var(--color-success)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center' }}>
+                      {status === 'private_memory' || (status === 'opening_statements' && !isSpeaker) ? (
+                        <VolumeX size={isMobile ? 10 : 12} style={{ color: 'var(--text-muted)' }} />
+                      ) : (
+                        <Volume2 size={isMobile ? 10 : 12} style={{ color: 'var(--color-success)' }} />
+                      )}
+                    </div>
+                  )}
+                  <span style={{ fontSize: isMobile ? '0.65rem' : '0.8rem', fontWeight: isMe ? '700' : '500', color: isMe ? '#ffffff' : 'var(--text-secondary)' }}>
+                    {isMobile ? p.name.substring(0, 6) : p.name}
+                  </span>
+                  {!isMobile && <span className="font-tech" style={{ fontSize: '0.75rem', color: 'var(--accent-purple)', fontWeight: '600' }}>{p.detectiveRating}</span>}
+                  {showStake && (
+                    <span style={{
+                      fontSize: '0.6rem', padding: '2px 5px', borderRadius: '3px',
+                      background: p.currentStake === 'Certain' ? 'var(--color-danger-dim)' : p.currentStake === 'Confident' ? 'var(--color-warning-dim)' : 'rgba(255,255,255,0.02)',
+                      color: p.currentStake === 'Certain' ? 'var(--color-danger)' : p.currentStake === 'Confident' ? 'var(--color-warning)' : 'var(--text-muted)'
+                    }}>
+                      {p.currentStake}
+                    </span>
+                  )}
+                  {status === 'confidence_lock' && !isMobile && (
+                    <span style={{ fontSize: '0.65rem', padding: '2px 4px', borderRadius: '3px', background: hasLocked ? 'var(--color-success-dim)' : 'rgba(255, 255, 255, 0.02)', color: hasLocked ? 'var(--color-success)' : 'var(--text-muted)' }}>
+                      {hasLocked ? 'LOCKED' : 'STAKING'}
+                    </span>
                   )}
                 </div>
-                <span style={{ fontSize: isMobile ? '0.65rem' : '0.8rem', fontWeight: isMe ? '700' : '500', color: isMe ? '#ffffff' : 'var(--text-secondary)' }}>
-                  {isMobile ? p.name.substring(0, 6) : p.name}
-                </span>
-                {!isMobile && <span className="font-tech" style={{ fontSize: '0.75rem', color: 'var(--accent-purple)', fontWeight: '600' }}>{p.detectiveRating}</span>}
-                {status === 'confidence_lock' && !isMobile && (
-                  <span style={{ fontSize: '0.65rem', padding: '2px 4px', borderRadius: '3px', background: hasLocked ? 'var(--color-success-dim)' : 'rgba(255, 255, 255, 0.02)', color: hasLocked ? 'var(--color-success)' : 'var(--text-muted)' }}>
-                    {hasLocked ? 'LOCKED' : 'STAKING'}
-                  </span>
-                )}
-              </div>
-            );
+              );
           })}
         </div>
         {!isMobile && (

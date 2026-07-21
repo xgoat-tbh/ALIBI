@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Award, ShieldCheck, RotateCcw, Activity } from 'lucide-react';
+import { Award, ShieldCheck, RotateCcw, Activity, Skull } from 'lucide-react';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
 function Recap({
@@ -234,6 +234,8 @@ function Recap({
             highlights.map((highlight, idx) => {
               const isHero = highlight.type === 'hero';
               const isBlunder = highlight.type === 'blunder';
+              const isTraitor = highlight.type === 'traitor';
+              const isTraitorCaught = highlight.type === 'traitor_caught';
               
               return (
                 <div
@@ -243,15 +245,20 @@ function Recap({
                     padding: isMobile ? '10px 12px' : '12px 16px',
                     backgroundColor: isHero
                       ? 'var(--color-success-dim)'
-                      : isBlunder
+                      : isBlunder || isTraitor
                       ? 'var(--color-danger-dim)'
+                      : isTraitorCaught
+                      ? 'var(--color-warning-dim)'
                       : 'rgba(255,255,255,0.01)',
-                    borderLeft: `2px solid ${isHero ? 'var(--color-success)' : isBlunder ? 'var(--color-danger)' : 'var(--text-muted)'}`
+                    borderLeft: `2px solid ${isHero ? 'var(--color-success)' : isBlunder || isTraitor ? 'var(--color-danger)' : isTraitorCaught ? 'var(--color-warning)' : 'var(--text-muted)'}`
                   }}
                 >
-                  <p style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', lineHeight: '1.4', color: 'var(--text-primary)' }}>
-                    {highlight.text}
-                  </p>
+                  <div style={{ display: 'flex', gap: '6px', alignItems: 'flex-start' }}>
+                    {isTraitor && <Skull size={14} style={{ color: 'var(--color-danger)', flexShrink: 0, marginTop: '2px' }} />}
+                    <p style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', lineHeight: '1.4', color: isTraitor ? 'var(--color-danger)' : isTraitorCaught ? 'var(--color-warning)' : 'var(--text-primary)' }}>
+                      {highlight.text}
+                    </p>
+                  </div>
                 </div>
               );
             })

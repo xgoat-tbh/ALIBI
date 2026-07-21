@@ -94,6 +94,7 @@ export function getFilteredRoomState(room, playerId) {
         score: p.score,
         detectiveRating: p.detectiveRating,
         isHost: p.isHost,
+        isSaboteur: (isSelf || isEnded) ? !!p.isSaboteur : false,
         currentStake: (isSelf || isEnded) ? p.currentStake : null,
         currentLock: (isSelf || isEnded) ? p.currentLock : null,
         lastScoreDelta: p.lastScoreDelta,

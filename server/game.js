@@ -145,6 +145,17 @@ export function handleStartGame(socketId, themeId) {
 
   room.caseData = generateCase(room.players.length, themeId);
 
+  // Assign saboteur if 4+ players
+  room.players.forEach(p => { p.isSaboteur = false; });
+  if (room.players.length >= 4) {
+    const nonHosts = room.players.filter(p => !p.isHost);
+    const saboteur = nonHosts[Math.floor(Math.random() * nonHosts.length)];
+    if (saboteur) {
+      saboteur.isSaboteur = true;
+      getIO().to(saboteur.id).emit('saboteur_assigned');
+    }
+  }
+
   room.players.forEach((player, idx) => {
     player.originalIndex = idx;
     const facts = room.caseData.playersFacts[`player-${idx}`];
@@ -339,6 +350,7 @@ export function handlePlayAgain(socketId) {
     p.currentLock = null;
     p.currentStake = null;
     p.lastScoreDelta = 0;
+    p.isSaboteur = false;
     p.isReady = p.isHost;
   });
 
