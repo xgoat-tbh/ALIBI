@@ -1,6 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useMediaQuery } from '../hooks/useMediaQuery';
 
 function LinkedDrop({ currentPrompt, currentRound, totalRounds, phaseTimer, mySubmission, onSubmitWord }) {
+  const isMobile = useMediaQuery('(max-width: 768px)');
   const [input, setInput] = useState(mySubmission || '');
   const [submitted, setSubmitted] = useState(!!mySubmission);
   const inputRef = useRef(null);
