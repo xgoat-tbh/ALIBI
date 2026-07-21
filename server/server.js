@@ -31,6 +31,7 @@ import {
   handleListRooms,
   handleReconnect,
   handleDisconnect,
+  handleAddBots,
 } from './game.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -124,6 +125,9 @@ io.on('connection', (socket) => {
     const rooms = handleListRooms();
     socket.emit('room_list', rooms);
   });
+
+  // Bots
+  socket.on('add_bots', ({ count }) => handleAddBots(socket.id, count));
 
   // Disconnect
   socket.on('disconnect', () => handleDisconnect(socket.id));

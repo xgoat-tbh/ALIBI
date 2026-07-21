@@ -9,6 +9,7 @@ import { calculateScoring } from './scoring.js';
 export { setIO, rooms } from './roomManager.js';
 export { calculateScoring } from './scoring.js';
 export { PHASES } from './phaseManager.js';
+export { handleAddBots } from './botManager.js';
 
 // ─── Board Conflict Check ───
 

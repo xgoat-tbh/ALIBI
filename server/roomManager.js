@@ -95,6 +95,7 @@ export function getFilteredRoomState(room, playerId) {
         detectiveRating: p.detectiveRating,
         isHost: p.isHost,
         isSaboteur: (isSelf || isEnded) ? !!p.isSaboteur : false,
+        isBot: !!p.isBot,
         currentStake: (isSelf || isEnded) ? p.currentStake : null,
         currentLock: (isSelf || isEnded) ? p.currentLock : null,
         lastScoreDelta: p.lastScoreDelta,
@@ -128,4 +129,6 @@ export function broadcastRoomState(room) {
       }
     }
   });
+  // Trigger bot AI after state broadcast (lazy import to avoid cycle at module level)
+  import('./botManager.js').then(({ processBots }) => processBots(room)).catch(() => {});
 }

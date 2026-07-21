@@ -201,6 +201,7 @@ function GamePage({ onOpenRules }) {
           onStartGame={handleStartGame}
           onToggleReady={handleToggleReady}
           onLeaveRoom={handleLeaveRoom}
+          onAddBots={(count) => emit('add_bots', { count })}
         />
       </div>
     );

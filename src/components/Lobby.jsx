@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { Users, Copy, Check, Shield, ArrowRight, LogOut } from 'lucide-react';
+import { Users, Copy, Check, Shield, ArrowRight, LogOut, Bot } from 'lucide-react';
 import CustomDropdown from './CustomDropdown';
 import { useMediaQuery } from '../hooks/useMediaQuery';
 
-function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinRoom, onStartGame, onToggleReady, onLeaveRoom }) {
+function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinRoom, onStartGame, onToggleReady, onLeaveRoom, onAddBots }) {
   const [selectedTheme, setSelectedTheme] = useState('random');
   const [copied, setCopied] = useState(false);
   const isMobile = useMediaQuery('(max-width: 768px)');
@@ -107,8 +107,9 @@ function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinR
                   </div>
 
                   <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '0.875rem', fontWeight: '500', color: isMe ? '#ffffff' : 'var(--text-primary)' }}>
+                    <span style={{ fontSize: '0.875rem', fontWeight: '500', color: isMe ? '#ffffff' : 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                       {player.name} {isMe && <span style={{ color: 'var(--text-muted)', fontSize: '0.75rem' }}>(You)</span>}
+                      {player.isBot && <span style={{ fontSize: '0.6rem', padding: '1px 5px', borderRadius: '3px', background: 'rgba(124,58,237,0.1)', color: 'var(--accent-purple)', fontWeight: '700' }}>BOT</span>}
                     </span>
                   </div>
                 </div>
@@ -155,12 +156,22 @@ function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinR
           />
 
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+            {players.length < 10 && (
+              <button
+                onClick={() => onAddBots?.(2)}
+                className="btn-secondary"
+                style={{ width: '100%', padding: '8px 14px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                aria-label="Add test bots"
+              >
+                <Bot size={12} />
+                <span>Add {Math.min(2, 10 - players.length)} Bot{Math.min(2, 10 - players.length) > 1 ? 's' : ''}</span>
+              </button>
+            )}
             <button
               onClick={handleStart}
               className="btn-primary"
               style={{ width: '100%', padding: '12px 20px', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               disabled={players.length < 2 || !players.every(p => p.isReady)}
-              aria-label="Start investigation"
             >
               Start Investigation
             </button>
