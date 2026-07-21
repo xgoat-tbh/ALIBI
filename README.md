@@ -1,12 +1,12 @@
-# ALIBI
+# LINKED
 
-A real-time multiplayer deception & deduction game. Players receive private facts, build a shared investigation board, challenge contradictions, and reconstruct the case file — all in a live browser session.
+A real-time multiplayer word association party game. A word appears. You type the first word that comes to mind. See who matched — and who went solo.
 
 ## Tech Stack
 
 - **Frontend:** React + Vite, Zustand (state), Socket.IO client, react-router-dom
 - **Backend:** Node.js, Socket.IO server, Express
-- **Deploy:** Render (backend), Vercel (frontend)
+- **Deploy:** Render (backend + frontend)
 
 ## Getting Started
 
@@ -14,8 +14,7 @@ A real-time multiplayer deception & deduction game. Players receive private fact
 git clone <repo>
 cd ALIBI
 npm install
-npm run dev       # starts Vite dev server (port 5173)
-npm run server    # starts backend (port 3001)
+npm run dev       # starts Vite dev server (port 5173) + backend (port 3001)
 ```
 
 ## Project Structure
@@ -23,14 +22,15 @@ npm run server    # starts backend (port 3001)
 ```
 src/
   pages/         LandingPage, GamePage
-  components/    Lobby, InvestigationBoard, ConfidenceLock, etc.
-  hooks/         useSocket, useSound, useSoundEffects, useMediaQuery
+  components/    Lobby, LinkedDrop, LinkedReveal, LinkedResults, ChatSidebar
+  hooks/         useSocket, useMediaQuery
   store/         gameStore (game state), uiStore (UI state)
 server/
-  game.js        Event handler orchestrator
+  linkedGame.js  Event handler orchestrator
+  linkedWords.js Word bank
+  botManager.js  Bot AI
   roomManager.js Room state, broadcast, rate limiting
-  phaseManager.js Timers, phase transitions
-  scoring.js     Fuzzy-match scoring, stake highlights
+  server.js      Socket.io/Express entry
 ```
 
 ## Environment Variables

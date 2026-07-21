@@ -56,13 +56,12 @@
   --transition-spring: all 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-/* Reset and viewport constraints (Never Scroll) */
 html, body, #root {
-  height: 100% !important;
-  width: 100% !important;
-  margin: 0 !important;
-  padding: 0 !important;
-  overflow: hidden !important;
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 body {
@@ -151,31 +150,18 @@ img, svg, canvas, video, iframe {
   -webkit-backdrop-filter: blur(12px);
 }
 
-/* Landing Page Wrapper Constraint */
 .landing-wrapper {
-  height: 100dvh !important;
-  width: 100% !important;
-  max-width: 100vw !important;
-  overflow: hidden !important;
+  width: 100%;
+  max-width: 100vw;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
   align-items: center;
   box-sizing: border-box;
-  padding: 40px 20px 24px 20px;
   position: relative;
 }
 
-/* Game-phase container */
-.game-container {
-  min-height: 100dvh;
-  gap: 0;
-  display: flex;
-  flex-direction: column;
-  background: rgba(7, 8, 10, 0.78);
-  backdrop-filter: blur(2px);
-  -webkit-backdrop-filter: blur(2px);
-}
+
 
 /* Buttons */
 button {
@@ -354,57 +340,39 @@ input[type="text"]:focus, select:focus, textarea:focus {
   background: rgba(255, 255, 255, 0.16);
 }
 
-/* Responsive adjustments for shorter viewports to prevent overflow */
 @media (max-height: 840px) {
-  .landing-wrapper {
-    padding: 24px 20px 16px 20px !important;
-  }
   .landing-wrapper h1.font-display {
-    font-size: 4rem !important;
+    font-size: 4rem;
   }
   .landing-wrapper .screenshot-card {
-    min-height: 220px !important;
-    padding: 20px !important;
-  }
-  .landing-wrapper .screenshot-panel {
-    padding: 16px 20px !important;
+    min-height: 220px;
+    padding: 20px;
   }
 }
 
 @media (max-height: 700px) {
-  .landing-wrapper {
-    padding: 16px 20px 10px 20px !important;
-  }
   .landing-wrapper h1.font-display {
-    font-size: 3rem !important;
+    font-size: 3rem;
   }
   .landing-wrapper .screenshot-card {
-    min-height: 180px !important;
-    padding: 12px 16px !important;
-  }
-  .landing-wrapper .screenshot-panel {
-    padding: 10px 16px !important;
+    min-height: 180px;
+    padding: 12px 16px;
   }
 }
 
-/* Tablet & Mobile Responsive Breakpoints */
 @media (max-width: 1024px) {
   :root {
     --radius-button: 5px;
     --radius-card: 6px;
   }
 
-  .landing-wrapper {
-    padding: 20px 16px 16px !important;
-  }
-
   .landing-wrapper h1.font-display {
-    font-size: 4rem !important;
+    font-size: 4rem;
   }
 
   .landing-wrapper .screenshot-card {
-    min-height: 220px !important;
-    padding: 24px !important;
+    min-height: 220px;
+    padding: 24px;
   }
 }
 
@@ -415,39 +383,21 @@ input[type="text"]:focus, select:focus, textarea:focus {
   }
 
   html, body, #root {
-    overflow-x: hidden !important;
-    overflow-y: hidden !important;
-  }
-
-  .landing-wrapper {
-    padding: 12px 12px 10px !important;
-    gap: 8px;
+    overflow: hidden;
   }
 
   .landing-wrapper h1.font-display {
-    font-size: 3.2rem !important;
+    font-size: 3.2rem;
   }
 
   .landing-wrapper .screenshot-card {
-    min-height: 160px !important;
-    padding: 16px !important;
-  }
-
-  .landing-wrapper .screenshot-panel {
-    padding: 12px 16px !important;
-  }
-
-  .landing-wrapper .screenshot-card h3 {
-    font-size: 0.8rem !important;
-  }
-
-  .landing-wrapper .screenshot-card p {
-    font-size: 0.7rem !important;
+    min-height: 160px;
+    padding: 16px;
   }
 
   .screenshot-input-wrapper input {
-    padding: 10px 36px 10px 12px !important;
-    font-size: 0.8rem !important;
+    padding: 10px 36px 10px 12px;
+    font-size: 0.8rem;
   }
 
   button {
