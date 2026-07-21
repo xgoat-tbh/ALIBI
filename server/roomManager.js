@@ -34,7 +34,7 @@ export function shuffleArray(arr) {
 
 export function stripHtml(s) {
   if (!s) return '';
-  return s.replace(/<[^>]*>/g, '').replace(/[&<>"]/g, '');
+  return s.replace(/<[^>]*>/g, '').replace(/[&<>"']/g, '');
 }
 
 export function findPlayerRoom(socketId) {

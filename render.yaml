@@ -2,8 +2,9 @@ services:
   - type: web
     name: alibi-server
     env: node
-    buildCommand: npm install
+    buildCommand: npm install && npm run build
     startCommand: node server/server.js
+    healthCheckPath: /api/health
     envVars:
       - key: NODE_VERSION
         value: 20

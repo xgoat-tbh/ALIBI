@@ -50,6 +50,10 @@ function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinR
             transition: 'var(--transition-smooth)'
           }}
           className="hover-bg"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCopyCode(); }}
+          aria-label="Copy room code"
         >
           <h2 className="font-tech" style={{ fontSize: isMobile ? '2.5rem' : '3.5rem', fontWeight: '500', color: '#ffffff', letterSpacing: '0.05em' }}>
             {roomCode}
@@ -156,6 +160,7 @@ function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinR
               className="btn-primary"
               style={{ width: '100%', padding: '12px 20px', fontSize: '0.9rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               disabled={players.length < 2 || !players.every(p => p.isReady)}
+              aria-label="Start investigation"
             >
               Start Investigation
             </button>
@@ -177,6 +182,7 @@ function Lobby({ roomCode, players = [], playerId, isHost, onCreateRoom, onJoinR
             onClick={onToggleReady}
             className={players.find(p => p.id === playerId)?.isReady ? 'btn-secondary' : 'btn-primary'}
             style={{ width: '100%', padding: '10px 20px', fontSize: '0.85rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}
+            aria-label={players.find(p => p.id === playerId)?.isReady ? 'Waiting for host' : 'Mark ready'}
           >
             {players.find(p => p.id === playerId)?.isReady ? 'Waiting for Host...' : 'Mark Ready'}
           </button>

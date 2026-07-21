@@ -164,14 +164,19 @@ export function handlePlaceCard(socketId, { fact, category, because }) {
   const player = room.players.find(p => p.id === socketId);
   if (!player) return;
 
+  const text = (fact?.text || '').trim();
+  const reason = (because || '').trim();
+  if (!text || text.length > 500) return;
+  if (reason.length > 500) return;
+
   const newBoardItem = {
     id: `board-item-${Date.now()}`,
-    factId: fact.id,
-    text: fact.text,
+    factId: fact?.id,
+    text,
     category,
     placerId: player.id,
     placerName: player.name,
-    because,
+    because: reason,
     challenged: false,
     challengeText: null,
     challengeStatus: null
@@ -246,7 +251,15 @@ export function handleObjection(socketId) {
 export function handleUpdateReconstruction(socketId, { reconstruction }) {
   const room = findPlayerRoom(socketId);
   if (!room || room.status !== 'final_reconstruction') return;
-  room.reconstruction = { ...room.reconstruction, ...reconstruction };
+  if (!checkRateLimit(`recon:${socketId}`, 20, 10000)) return;
+
+  const sanitized = {};
+  for (const [key, val] of Object.entries(reconstruction || {})) {
+    if (['who','where','when','how','why','evidenceNotes'].includes(key)) {
+      sanitized[key] = (typeof val === 'string' ? val : '').slice(0, 500);
+    }
+  }
+  room.reconstruction = { ...room.reconstruction, ...sanitized };
   broadcastRoomState(room);
 }
 

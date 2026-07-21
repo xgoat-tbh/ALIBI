@@ -1,16 +1,38 @@
-# React + Vite
+# ALIBI
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+A real-time multiplayer deception & deduction game. Players receive private facts, build a shared investigation board, challenge contradictions, and reconstruct the case file — all in a live browser session.
 
-Currently, two official plugins are available:
+## Tech Stack
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- **Frontend:** React + Vite, Zustand (state), Socket.IO client, react-router-dom
+- **Backend:** Node.js, Socket.IO server, Express
+- **Deploy:** Render (backend), Vercel (frontend)
 
-## React Compiler
+## Getting Started
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+git clone <repo>
+cd ALIBI
+npm install
+npm run dev       # starts Vite dev server (port 5173)
+npm run server    # starts backend (port 3001)
+```
 
-## Expanding the Oxlint configuration
+## Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+```
+src/
+  pages/         LandingPage, GamePage
+  components/    Lobby, InvestigationBoard, ConfidenceLock, etc.
+  hooks/         useSocket, useSound, useSoundEffects, useMediaQuery
+  store/         gameStore (game state), uiStore (UI state)
+server/
+  game.js        Event handler orchestrator
+  roomManager.js Room state, broadcast, rate limiting
+  phaseManager.js Timers, phase transitions
+  scoring.js     Fuzzy-match scoring, stake highlights
+```
+
+## Environment Variables
+
+- `VITE_SOCKET_URL` — Backend URL for production. Falls back to `window.location.origin`.

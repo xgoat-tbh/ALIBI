@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { useGameStore } from '../store/gameStore';
 import { useUIStore } from '../store/uiStore';
 import { useMediaQuery } from '../hooks/useMediaQuery';
+import { playReady, playLockIn, playChat } from '../hooks/useSound';
 import Lobby from '../components/Lobby';
 import CaseOpen from '../components/CaseOpen';
 import PrivateMemory from '../components/PrivateMemory';
@@ -12,7 +13,7 @@ import ConfidenceLock from '../components/ConfidenceLock';
 import TruthReveal from '../components/TruthReveal';
 import Recap from '../components/Recap';
 import { ChatSidebar } from '../components/ChatSidebar';
-import { Volume2, VolumeX, ShieldAlert, MessageSquare, AlertCircle, Copy, Check, MessageCircle } from 'lucide-react';
+import { Volume2, VolumeX, ShieldAlert, MessageSquare, AlertCircle, Wifi, WifiOff, Copy, Check, MessageCircle } from 'lucide-react';
 
 function GamePage({ onOpenRules }) {
   const { code } = useParams();
@@ -69,7 +70,7 @@ function GamePage({ onOpenRules }) {
   };
 
   const handleStartGame = (themeId) => emit('start_game', { themeId });
-  const handleToggleReady = () => emit('toggle_ready');
+  const handleToggleReady = () => { playReady(); emit('toggle_ready'); };
 
   const handlePlaceCard = (fact, category, because) => emit('place_card', { fact, category, because });
   const handleRemoveCard = (boardItemId) => emit('remove_card', { boardItemId });
@@ -77,7 +78,7 @@ function GamePage({ onOpenRules }) {
   const handleRespondChallenge = (boardItemId, explanation) => emit('respond_challenge', { boardItemId, explanation });
   const handleObjection = () => emit('trigger_objection');
   const handleUpdateReconstruction = (recon) => emit('update_reconstruction', { reconstruction: recon });
-  const handleLockConfidence = (fact, stake) => emit('lock_confidence', { fact, stake });
+  const handleLockConfidence = (fact, stake) => { playLockIn(); emit('lock_confidence', { fact, stake }); };
   const handleHostNextPhase = () => {
     if (window.confirm('Skip to the next phase?')) emit('host_next_phase');
   };
@@ -86,6 +87,7 @@ function GamePage({ onOpenRules }) {
   const handleSendChat = (e) => {
     e.preventDefault();
     if (!chatInput.trim()) return;
+    playChat();
     emit('send_chat', { message: chatInput });
     setChatInput('');
   };
@@ -187,6 +189,20 @@ function GamePage({ onOpenRules }) {
   // ─── Game Views ───
   return (
     <div className="game-container">
+      {!isConnected && (
+        <div role="alert" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, zIndex: 9999,
+          padding: '10px 16px',
+          background: 'rgba(220, 38, 38, 0.15)',
+          borderBottom: '1px solid rgba(220, 38, 38, 0.3)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px',
+          color: 'var(--color-danger)', fontSize: '0.85rem', fontWeight: '600',
+          backdropFilter: 'blur(8px)'
+        }}>
+          <WifiOff size={16} />
+          <span>Connection lost. Reconnecting...</span>
+        </div>
+      )}
       {/* Header */}
       <header
         style={{
@@ -216,7 +232,10 @@ function GamePage({ onOpenRules }) {
               transition: 'var(--transition-smooth)'
             }}
             className="hover-brighten"
-            title="Copy Room Code"
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') handleCopyCode(); }}
+            aria-label="Copy room code"
           >
             <span className="font-tech" style={{ fontSize: isMobile ? '0.7rem' : '0.8rem', fontWeight: '600', letterSpacing: '0.05em', color: 'var(--text-primary)' }}>{roomCode}</span>
             {copied ? <Check size={10} style={{ color: 'var(--color-success)' }} /> : <Copy size={10} style={{ color: 'var(--text-muted)' }} />}
@@ -250,7 +269,7 @@ function GamePage({ onOpenRules }) {
 
         <div className="flex-row" style={{ gap: isMobile ? '6px' : '10px', flexShrink: 0 }}>
           {phaseTimer > 0 && (
-            <div className="font-tech" style={{
+            <div role="timer" aria-label={`${phaseTimer} seconds remaining`} className="font-tech" style={{
               background: phaseTimer <= 10 ? 'var(--color-danger-dim)' : 'rgba(255, 255, 255, 0.02)',
               padding: isMobile ? '4px 8px' : '6px 12px',
               borderRadius: 'var(--radius-button)',
@@ -268,7 +287,7 @@ function GamePage({ onOpenRules }) {
             onClick={onOpenRules}
             className="btn-secondary"
             style={{ padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem' }}
-            title="How to Play"
+            aria-label="How to Play"
           >
             ?
           </button>
@@ -277,7 +296,7 @@ function GamePage({ onOpenRules }) {
             onClick={toggleChat}
             className="btn-secondary"
             style={{ padding: isMobile ? '4px 8px' : '6px 12px', fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}
-            title={showChatPanel || mobileChatOpen ? 'Close chat' : 'Open chat'}
+            aria-label={showChatPanel || mobileChatOpen ? 'Close chat' : 'Open chat'}
           >
             <MessageSquare size={12} />
           </button>
@@ -288,13 +307,14 @@ function GamePage({ onOpenRules }) {
               className="btn-danger"
               style={{ padding: isMobile ? '4px 8px' : '6px 12px', fontSize: isMobile ? '0.65rem' : '0.8rem', fontWeight: '600', textTransform: 'uppercase', letterSpacing: '0.05em' }}
               disabled={objection.active}
+              aria-label="Raise objection"
             >
               {isMobile ? 'Obj' : 'Objection'}
             </button>
           )}
 
           {isHost && status !== 'recap' && (
-            <button onClick={handleHostNextPhase} className="btn-secondary" style={{ padding: isMobile ? '4px 8px' : '6px 12px', fontSize: isMobile ? '0.65rem' : '0.8rem', fontWeight: '500' }}>
+            <button onClick={handleHostNextPhase} className="btn-secondary" style={{ padding: isMobile ? '4px 8px' : '6px 12px', fontSize: isMobile ? '0.65rem' : '0.8rem', fontWeight: '500' }} aria-label="Skip to next phase">
               Skip
             </button>
           )}
@@ -451,6 +471,7 @@ function GamePage({ onOpenRules }) {
             border: 'none', display: 'flex', alignItems: 'center',
             justifyContent: 'center', cursor: 'pointer', boxShadow: 'var(--shadow-floating)'
           }}
+          aria-label="Open chat"
         >
           <MessageCircle size={20} />
           {chats.length > 0 && (
@@ -502,8 +523,8 @@ function GamePage({ onOpenRules }) {
           })}
         </div>
         {!isMobile && (
-          <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '24px', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
-            <div style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: isConnected ? 'var(--color-success)' : 'var(--color-danger)' }} />
+          <div role="status" aria-live="polite" style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginLeft: '24px', display: 'flex', alignItems: 'center', gap: '6px', flexShrink: 0 }}>
+            {isConnected ? <Wifi size={12} /> : <WifiOff size={12} />}
             <span>{isConnected ? 'CONNECTED' : 'DISCONNECTED'}</span>
           </div>
         )}

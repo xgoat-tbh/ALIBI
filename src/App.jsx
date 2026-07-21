@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Routes, Route, useNavigate } from 'react-router-dom';
 import { useSocket } from './hooks/useSocket';
+import { useSoundEffects } from './hooks/useSoundEffects';
 import { useGameStore } from './store/gameStore';
 import LandingPage from './pages/LandingPage';
 import GamePage from './pages/GamePage';
@@ -14,8 +15,8 @@ function App() {
   const roomCode = useGameStore((s) => s.roomCode);
 
   useSocket(SOCKET_URL);
+  useSoundEffects();
 
-  // Navigate to room when created or joined via socket response
   useEffect(() => {
     if (roomCode) {
       navigate(`/room/${roomCode}`, { replace: true });

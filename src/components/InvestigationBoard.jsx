@@ -131,6 +131,9 @@ function InvestigationBoard({ board = [], privateHand = [], playerId, onPlaceCar
                           borderLeft: `2px solid ${item.isConflict ? 'var(--color-warning)' : catColor}`,
                           borderColor: item.isConflict ? 'var(--color-warning)' : catColor
                         }}
+                        tabIndex={0}
+                        role="region"
+                        aria-label={`Card by ${item.placerName} in ${item.category} column`}
                       >
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2px' }}>
                           <span style={{ fontSize: isMobile ? '0.55rem' : '0.65rem', color: 'var(--text-muted)', fontWeight: '600' }}>
@@ -142,6 +145,7 @@ function InvestigationBoard({ board = [], privateHand = [], playerId, onPlaceCar
                               onClick={() => { if (window.confirm('Remove this card from the board?')) onRemoveCard(item.id); }}
                               style={{ background: 'transparent', padding: '2px', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
                               className="hover-brighten"
+                              aria-label={`Remove your card from ${item.category}`}
                             >
                               <Trash2 size={isMobile ? 8 : 10} />
                             </button>
@@ -199,6 +203,7 @@ function InvestigationBoard({ board = [], privateHand = [], playerId, onPlaceCar
                                 className="btn-secondary"
                                 style={{ width: '100%', padding: '2px 4px', fontSize: isMobile ? '0.55rem' : '0.65rem', borderRadius: '4px' }}
                                 disabled={activeChallengeItem !== undefined}
+                                aria-label={`Challenge card by ${item.placerName}`}
                               >
                                 Challenge Card
                               </button>
@@ -237,6 +242,10 @@ function InvestigationBoard({ board = [], privateHand = [], playerId, onPlaceCar
                   backgroundColor: 'rgba(0, 0, 0, 0.1)',
                   borderColor: isPlaced ? 'transparent' : 'rgba(255,255,255,0.03)'
                 }}
+                role="button"
+                tabIndex={isPlaced ? -1 : 0}
+                aria-label={isPlaced ? `${fact.category} fact already placed on board` : `Select ${fact.category} fact for board placement`}
+                onKeyDown={(e) => { if (!isPlaced && (e.key === 'Enter' || e.key === ' ')) handleCardClick(fact); }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginBottom: '3px', borderBottom: '1px solid rgba(255,255,255,0.02)', paddingBottom: '3px' }}>
                   <span style={{ color: color }}>{catIcon(fact.category)}</span>
